@@ -59,7 +59,7 @@ type Bot struct {
 	// The date when the bot was submitted
 	Date time.Time `json:"date"`
 
-	// The vanity url of the bot
+	// The vanity url of the bot (may be empty)
 	Vanity string `json:"vanity"`
 
 	// The monthly amount of votes the bot has
