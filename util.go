@@ -3,7 +3,6 @@ package dbl
 import (
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -14,15 +13,18 @@ type ratelimitResponse struct {
 func (c *Client) readBody(res *http.Response) ([]byte, error) {
 	defer res.Body.Close()
 
-	if res.StatusCode == 401 {
+	switch res.StatusCode {
+	case 400:
+		return nil, ErrInvalidRequest
+	case 401:
 		return nil, ErrUnauthorizedRequest
-	}
-
-	if res.StatusCode != 200 {
+	case 200:
+		break
+	default:
 		return nil, ErrRequestFailed
 	}
 
-	body, err := ioutil.ReadAll(res.Body)
+	body, err := io.ReadAll(res.Body)
 
 	if err != nil {
 		return nil, err

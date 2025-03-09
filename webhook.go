@@ -2,7 +2,7 @@ package dbl
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
@@ -80,7 +80,7 @@ func (wl *WebhookListener) handlePayload(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
 		return

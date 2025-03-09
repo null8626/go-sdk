@@ -1,10 +1,10 @@
-## Go DBL
+## Go Top.gg
 
 [![Build Status](https://travis-ci.com/rumblefrog/go-dbl.svg?branch=master)](https://travis-ci.com/rumblefrog/go-dbl)
 [![Go Report Card](https://goreportcard.com/badge/github.com/DiscordBotList/go-dbl)](https://goreportcard.com/report/github.com/DiscordBotList/go-dbl)
 [![GoDoc](https://godoc.org/github.com/DiscordBotList/go-dbl?status.svg)](https://godoc.org/github.com/DiscordBotList/go-dbl)
 
-An API wrapper for [Discord Bots](https://top.gg/)
+An API wrapper for [Top.gg](https://top.gg/)
 
 Godoc is available here: https://godoc.org/github.com/DiscordBotList/go-dbl
 
@@ -12,7 +12,7 @@ Godoc is available here: https://godoc.org/github.com/DiscordBotList/go-dbl
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 ## Table of Contents
 
-- [Go DBL](#go-dbl)
+- [Go Top.gg](#go-topgg)
 - [Table of Contents](#table-of-contents)
 - [Guides](#guides)
 	- [Installing](#installing)
@@ -49,9 +49,10 @@ func main() {
 		log.Fatalf("Error creating new Discord Bot List client: %s", err)
 	}
 
-	err = dblClient.PostBotStats("botID", &dbl.BotStatsPayload{
-		Shards: []int{2500}, // If non-sharded, just pass total server count as the only integer element
+	err = dblClient.PostBotStats(&dbl.BotStatsPayload{
+		ServerCount: 2500
 	})
+  
 	if err != nil {
 		log.Printf("Error sending bot stats to Discord Bot List: %s", err)
 	}
