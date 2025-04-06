@@ -48,7 +48,7 @@ func main() {
 		log.Fatalf("Error creating new Discord Bot List client: %s", err)
 	}
 
-	err = dblClient.PostBotStats(&dbl.BotStatsPayload{
+	err = dblClient.PostBotStats(&dbl.BotStats{
 		ServerCount: 2500
 	})
   
