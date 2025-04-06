@@ -117,13 +117,16 @@ type BotStats struct {
 	ServerCount int `json:"server_count"`
 }
 
-type checkResponse struct {
-	Voted int `json:"voted"`
+type Autoposter struct {
+	stopChannel chan bool
+	// The channel on which errors are delivered after every attempted post API request.
+	Posted chan error
 }
 
-type BotStatsPayload struct {
-	// The amount of servers the bot is in
-	ServerCount int `json:"server_count"`
+type AutoposterCallback func() *BotStats
+
+type checkResponse struct {
+	Voted int `json:"voted"`
 }
 
 // Information about different bots with an optional filter parameter
@@ -383,7 +386,7 @@ func (c *Client) GetBotStats() (*BotStats, error) {
 // Post your bot's stats
 //
 // # Requires authentication
-func (c *Client) PostBotStats(payload *BotStatsPayload) error {
+func (c *Client) PostBotStats(payload *BotStats) error {
 	if c.token == "" {
 		return ErrRequireAuthentication
 	}
@@ -422,4 +425,45 @@ func (c *Client) PostBotStats(payload *BotStatsPayload) error {
 	}
 
 	return nil
+}
+
+// Automates your bot's stats posting
+//
+// # Requires authentication
+func (c *Client) StartAutoposter(delay int, callback AutoposterCallback) (*Autoposter, error) {
+	if c.token == "" {
+		return nil, ErrRequireAuthentication
+	}
+
+	if delay < 900 {
+		delay = 900
+	}
+
+	stopChannel := make(chan bool)
+	postedChannel := make(chan error)
+
+	go func() {
+		ticker := time.NewTicker(time.Duration(delay) * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-stopChannel:
+				close(postedChannel)
+				return
+			case <-ticker.C:
+				postedChannel <- c.PostBotStats(callback())
+			}
+		}
+	}()
+
+	return &Autoposter{
+		stopChannel: stopChannel,
+		Posted:      postedChannel,
+	}, nil
+}
+
+// Stops the autoposter
+func (a *Autoposter) Stop() {
+	a.stopChannel <- true
 }
