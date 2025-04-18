@@ -149,7 +149,9 @@ func (c *Client) GetBots(filter *GetBotsPayload) (*GetBotsResult, error) {
 		q := req.URL.Query()
 
 		if filter.Limit != 0 {
-			q.Add("limit", strconv.Itoa(filter.Limit))
+			q.Add("limit", strconv.Itoa(max(filter.Limit, 500)))
+		} else {
+			q.Add("limit", "50")
 		}
 
 		if filter.Offset != 0 {
