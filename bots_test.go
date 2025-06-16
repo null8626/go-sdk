@@ -1,6 +1,7 @@
 package dbl
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -20,6 +21,10 @@ func TestBots(t *testing.T) {
 	bots, err := client.GetBots(&GetBotsPayload{
 		Limit: fetchLimit,
 	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	assert.Nil(t, err, "Request should be successful (API depended)")
 

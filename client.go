@@ -1,8 +1,11 @@
 package dbl
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -32,22 +35,44 @@ type Client struct {
 	limiter    *rate.Limiter
 	httpClient HTTPClient
 	token      string
+	id         string
+}
+
+type tokenStructure struct {
+	Id string `json:"id"`
 }
 
 // NewClient returns a new *Client after applying the options provided.
 func NewClient(token string, options ...OptionFunc) (*Client, error) {
+	tokenSections := strings.Split(token, ".")
+
+	if len(tokenSections) != 3 {
+		return nil, ErrRequireAuthentication
+	}
+
+	decodedTokenSection, err := base64.RawURLEncoding.DecodeString(tokenSections[1])
+
+	if err != nil {
+		return nil, ErrRequireAuthentication
+	}
+
+	innerTokenStructure := &tokenStructure{}
+
+	if err = json.Unmarshal(decodedTokenSection, innerTokenStructure); err != nil {
+		return nil, ErrRequireAuthentication
+	}
+
 	client := &Client{
 		limiter:    rate.NewLimiter(1, 60),
 		httpClient: &http.Client{Timeout: defaultTimeout},
 		token:      token,
+		id:         innerTokenStructure.Id,
 	}
 
 	for _, optionFunc := range options {
 		if optionFunc == nil {
 			return nil, fmt.Errorf("invalid nil dbl.Client option func")
-		}
-
-		if err := optionFunc(client); err != nil {
+		} else if err := optionFunc(client); err != nil {
 			return nil, fmt.Errorf("error running dbl.Client option func: %w", err)
 		}
 	}

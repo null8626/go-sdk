@@ -3,6 +3,7 @@ package dbl
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -84,9 +85,6 @@ type GetBotsPayload struct {
 	// Default 0
 	Offset int
 
-	// Field search filter
-	Search map[string]string
-
 	// The field to sort by descending, valid field names are "id", "date", and "monthlyPoints".
 	Sort string
 
@@ -148,24 +146,14 @@ func (c *Client) GetBots(filter *GetBotsPayload) (*GetBotsResult, error) {
 	} else if filter != nil {
 		q := req.URL.Query()
 
-		if filter.Limit != 0 {
-			q.Add("limit", strconv.Itoa(max(filter.Limit, 500)))
+		if filter.Limit > 0 {
+			q.Add("limit", strconv.Itoa(min(filter.Limit, 500)))
 		} else {
 			q.Add("limit", "50")
 		}
 
-		if filter.Offset != 0 {
+		if filter.Offset >= 0 {
 			q.Add("offset", strconv.Itoa(filter.Offset))
-		}
-
-		if len(filter.Search) != 0 {
-			tStack := make([]string, 0)
-
-			for f, v := range filter.Search {
-				tStack = append(tStack, f+": "+v)
-			}
-
-			q.Add("search", strings.Join(tStack, " "))
 		}
 
 		if filter.Sort != "" {
@@ -264,7 +252,7 @@ func (c *Client) GetVotes(page int) ([]*Voter, error) {
 		return nil, ErrInvalidRequest
 	}
 
-	req, err := c.createRequest("GET", "bots/votes", nil)
+	req, err := c.createRequest("GET", fmt.Sprintf("bots/%s/votes", c.id), nil)
 
 	if err != nil {
 		return nil, err
@@ -437,8 +425,8 @@ func (c *Client) StartAutoposter(delay int, callback AutoposterCallback) (*Autop
 		return nil, ErrRequireAuthentication
 	}
 
-	if delay < 900 {
-		delay = 900
+	if delay < 900000 {
+		delay = 900000
 	}
 
 	stopChannel := make(chan bool)
