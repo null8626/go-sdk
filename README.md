@@ -131,4 +131,4 @@ func handleVote(payload *dbl.WebhookPayload) {
 
 ### More details
 
-For more details, Godoc and tests are available
+For more details, Godoc and tests are available.
