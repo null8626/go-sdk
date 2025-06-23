@@ -16,24 +16,22 @@ func TestNewClient(t *testing.T) {
 	httpClient := &http.Client{}
 
 	client, err := NewClient(
-		os.Getenv("apikey"),
+		os.Getenv("TOPGG_TOKEN"),
 		HTTPClientOption(httpClient), // Setting a custom HTTP client. Default is *http.Client with default timeout.
 		TimeoutOption(clientTimeout), // Setting timeout option. Default is 3 seconds
 	)
 
 	if err != nil {
-		log.Fatalf("Error creating new Discord Bot List client: %s", err)
+		log.Fatalf("Error creating new Top.gg client: %s", err)
 	}
 
-	_, err = client.GetBotStats()
+	_, err = client.GetServerCount()
 
-	assert.Nil(t, err, "GetBotStats should succeed")
+	assert.Nil(t, err, "GetServerCount should succeed")
 
-	err = client.PostBotStats(&BotStats{
-		ServerCount: 2,
-	})
+	err = client.PostServerCount(2)
 
-	assert.Nil(t, err, "PostBotStats should succeed")
+	assert.Nil(t, err, "PostServerCount should succeed")
 
 	time.Sleep(1 * time.Second)
 	_, err = client.GetBot("264811613708746752")
@@ -52,9 +50,9 @@ func TestNewClient(t *testing.T) {
 	assert.Nil(t, err, "GetBots should succeed")
 
 	time.Sleep(1 * time.Second)
-	_, err = client.GetVotes(1)
+	_, err = client.GetVoters(1)
 
-	assert.Nil(t, err, "GetVotes should succeed")
+	assert.Nil(t, err, "GetVoters should succeed")
 
 	time.Sleep(1 * time.Second)
 	_, err = client.HasUserVoted("661200758510977084")

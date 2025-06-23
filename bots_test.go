@@ -14,7 +14,7 @@ const (
 )
 
 func TestBots(t *testing.T) {
-	client, err := NewClient(os.Getenv("apikey"))
+	client, err := NewClient(os.Getenv("TOPGG_TOKEN"))
 
 	assert.Nil(t, err, "Client should be created w/o error")
 
@@ -34,7 +34,7 @@ func TestBots(t *testing.T) {
 }
 
 func TestBot(t *testing.T) {
-	client, err := NewClient(os.Getenv("apikey"))
+	client, err := NewClient(os.Getenv("TOPGG_TOKEN"))
 
 	assert.Nil(t, err, "Client should be created w/o error")
 

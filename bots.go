@@ -121,7 +121,7 @@ type Autoposter struct {
 	Posted chan error
 }
 
-type AutoposterCallback func() *BotStats
+type AutoposterCallback func() int
 
 type checkResponse struct {
 	Voted int `json:"voted"`
@@ -234,12 +234,12 @@ func (c *Client) GetBot(botID string) (*Bot, error) {
 	return bot, nil
 }
 
-// Use this endpoint to see who have upvoted your bot
+// Fetches your bot's recent 100 unique voters
 //
 // # Requires authentication
 //
 // IF YOU HAVE OVER 1000 VOTES PER MONTH YOU HAVE TO USE THE WEBHOOKS AND CAN NOT USE THIS
-func (c *Client) GetVotes(page int) ([]*Voter, error) {
+func (c *Client) GetVoters(page int) ([]*Voter, error) {
 	if c.token == "" {
 		return nil, ErrRequireAuthentication
 	}
@@ -334,49 +334,45 @@ func (c *Client) HasUserVoted(userID string) (bool, error) {
 	return cr.Voted == 1, nil
 }
 
-// Information about your bot's stats
-func (c *Client) GetBotStats() (*BotStats, error) {
+// Information about your bot's server count
+func (c *Client) GetServerCount() (int, error) {
 	if c.token == "" {
-		return nil, ErrRequireAuthentication
+		return 0, ErrRequireAuthentication
 	}
 
 	if !c.limiter.Allow() {
-		return nil, ErrLocalRatelimit
+		return 0, ErrLocalRatelimit
 	}
 
 	req, err := c.createRequest("GET", "bots/stats", nil)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	body, err := c.readBody(res)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	botStats := &BotStats{}
 
 	err = json.Unmarshal(body, botStats)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return botStats, nil
+	return botStats.ServerCount, err
 }
 
-// Post your bot's stats
+// Post your bot's server count
 //
 // # Requires authentication
-func (c *Client) PostBotStats(payload *BotStats) error {
+func (c *Client) PostServerCount(serverCount int) error {
 	if c.token == "" {
 		return ErrRequireAuthentication
 	}
@@ -385,11 +381,13 @@ func (c *Client) PostBotStats(payload *BotStats) error {
 		return ErrLocalRatelimit
 	}
 
-	if payload.ServerCount <= 0 {
+	if serverCount <= 0 {
 		return ErrInvalidRequest
 	}
 
-	encoded, err := json.Marshal(payload)
+	encoded, err := json.Marshal(&BotStats{
+		ServerCount: serverCount,
+	})
 
 	if err != nil {
 		return err
@@ -417,7 +415,7 @@ func (c *Client) PostBotStats(payload *BotStats) error {
 	return nil
 }
 
-// Automates your bot's stats posting
+// Automates your bot's server count posting
 //
 // # Requires authentication
 func (c *Client) StartAutoposter(delay int, callback AutoposterCallback) (*Autoposter, error) {
@@ -442,7 +440,7 @@ func (c *Client) StartAutoposter(delay int, callback AutoposterCallback) (*Autop
 				close(postedChannel)
 				return
 			case <-ticker.C:
-				postedChannel <- c.PostBotStats(callback())
+				postedChannel <- c.PostServerCount(callback())
 			}
 		}
 	}()

@@ -1,134 +1,217 @@
-## Go Top.gg
+# Top.gg Go SDK
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/top-gg/go-dbl)](https://goreportcard.com/report/github.com/top-gg/go-dbl)
-[![GoDoc](https://godoc.org/github.com/top-gg/go-dbl?status.svg)](https://godoc.org/github.com/top-gg/go-dbl)
+The community-maintained Go library for Top.gg.
 
-An API wrapper for [Top.gg](https://top.gg/)
+## Installation
 
-Godoc is available here: https://godoc.org/github.com/top-gg/go-dbl
-
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-## Table of Contents
-
-- [Go Top.gg](#go-topgg)
-- [Table of Contents](#table-of-contents)
-- [Guides](#guides)
-	- [Installing](#installing)
-	- [Posting Stats](#posting-stats)
-	- [Setting options](#setting-options)
-	- [Ratelimits](#ratelimits)
-	- [Webhook](#webhook)
-	- [More details](#more-details)
-
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-## Guides
-
-### Installing
-
-```bash
-go get -u github.com/top-gg/go-dbl
+```sh
+$ go get -u github.com/top-gg/go-dbl
 ```
 
-### Posting Stats
+## Setting up
+
+### With defaults
+
+```go
+client, err := dbl.NewClient(os.Getenv("TOPGG_TOKEN"))
+
+if err != nil {
+  log.Fatalf("Error creating new Top.gg client: %s", err)
+}
+```
+
+### With explicit options
+
+```go
+clientTimeout := 5 * time.Second
+httpClient := &http.Client{}
+
+client, err := dbl.NewClient(
+  os.Getenv("TOPGG_TOKEN"),
+  dbl.HTTPClientOption(httpClient),
+  dbl.TimeoutOption(clientTimeout),
+)
+
+if err != nil {
+  log.Fatalf("Error creating new Top.gg client: %s", err)
+}
+```
+
+## Usage
+
+### Getting a bot
+
+```go
+bot, err := client.GetBot("574652751745777665")
+
+if err != nil {
+  log.Fatalf("Unable to get a bot: %s", err)
+}
+```
+
+### Getting several bots
+
+```go
+bots, err := client.GetBots(&GetBotsPayload{
+  Limit: 20,
+})
+
+if err != nil {
+  log.Fatalf("Unable to get several bots: %s", err)
+}
+```
+
+### Getting your bot's voters
+
+#### First page
+
+```go
+firstPageVoters, err := client.GetVoters(1)
+
+if err != nil {
+  log.Fatalf("Unable to get voters: %s", err)
+}
+```
+
+#### Subsequent pages
+
+```go
+secondPageVoters, err := client.GetVoters(2)
+
+if err != nil {
+  log.Fatalf("Unable to get voters: %s", err)
+}
+```
+
+### Check if a user has voted for your bot
+
+```go
+has_voted, err := client.HasUserVoted("661200758510977084")
+
+if err != nil {
+  log.Fatalf("Unable to check if a user has voted: %s", err)
+}
+```
+
+### Getting your bot's server count
+
+```go
+serverCount, err := client.GetServerCount()
+
+if err != nil {
+  log.Fatalf("Unable to get server count: %s", err)
+}
+```
+
+### Posting your bot's server count
+
+```go
+err := client.PostServerCount(bot.GetServerCount())
+
+if err != nil {
+  log.Fatalf("Unable to post server count: %s", err)
+}
+```
+
+### Automatically posting your bot's server count every few minutes
+
+```go
+// Posts once every 30 minutes
+autoposter, err := client.StartAutoposter(1800000, func() int {
+  return bot.GetServerCount()
+})
+
+if err != nil {
+  log.Fatalf("Unable to start autoposter: %s", err)
+}
+
+go func() {
+  for {
+    post_err := <-autoposter.Posted
+
+    if post_err != nil {
+      log.Fatalf("Unable to post server count: %s", post_err)
+    }
+  }
+}()
+
+// ...
+
+autoposter.Stop() // Optional
+```
+
+### Checking if the weekend vote multiplier is active
+
+```go
+multiplierActive, err := client.IsMultiplierActive()
+
+if err != nil {
+  log.Fatalf("Unable to check weekend vote multiplier: %s", err)
+}
+```
+
+### Generating widget URLs
+
+#### Large
+
+```go
+widgetUrl := dbl.LargeWidget(dbl.DiscordBotWidget, "574652751745777665")
+```
+
+#### Votes
+
+```go
+widgetUrl := dbl.VotesWidget(dbl.DiscordBotWidget, "574652751745777665")
+```
+
+#### Owner
+
+```go
+widgetUrl := dbl.OwnerWidget(dbl.DiscordBotWidget, "574652751745777665")
+```
+
+#### Social
+
+```go
+widgetUrl := dbl.SocialWidget(dbl.DiscordBotWidget, "574652751745777665")
+```
+
+### Webhooks
+
+#### Being notified whenever someone voted for your bot
 
 ```go
 package main
 
 import (
-	"log"
+  "errors"
+  "fmt"
+  "log"
+  "os"
+  "net/http"
 
-	"github.com/top-gg/go-dbl"
+  "github.com/top-gg/go-dbl"
 )
 
 func main() {
-	dblClient, err := dbl.NewClient("token")
-	if err != nil {
-		log.Fatalf("Error creating new Discord Bot List client: %s", err)
-	}
+  listener := dbl.NewWebhookListener(os.Getenv("MY_TOPGG_WEBHOOK_SECRET"), "/votes", handleVote)
 
-	err = dblClient.PostBotStats(&dbl.BotStats{
-		ServerCount: 2500
-	})
-  
-	if err != nil {
-		log.Printf("Error sending bot stats to Discord Bot List: %s", err)
-	}
+  // Serve is a blocking call
+  err := listener.Serve(":8080")
 
-	// ...
+  if !errors.Is(err, http.ErrServerClosed) {
+    log.Fatalf("HTTP server error: %s", err)
+  }
+}
+
+func handleVote(payload []byte) {
+  vote, err := dbl.NewWebhookVotePayload(payload)
+
+  if err != nil {
+    fmt.Fprintf(os.Stderr, "Error: Unable to parse webhook payload: %s", err)
+    return
+  }
+
+  fmt.Printf("A user with the ID of %s has voted us on Top.gg!", vote.VoterId)
 }
 ```
-
-### Setting options
-
-```go
-package main
-
-import (
-	"log"
-	"net/http"
-	"time"
-
-	"github.com/top-gg/go-dbl"
-)
-
-const clientTimeout = 5 * time.Second
-
-func main() {
-	httpClient := &http.Client{}
-
-	dblClient, err := dbl.NewClient(
-		"token",
-		dbl.HTTPClientOption(httpClient), // Setting a custom HTTP client. Default is *http.Client with default timeout.
-		dbl.TimeoutOption(clientTimeout), // Setting timeout option. Default is 3 seconds
-	)
-	if err != nil {
-		log.Fatalf("Error creating new Discord Bot List client: %s", err)
-	}
-
-	// ...
-}
-```
-
-### Ratelimits
-
-There's a local token bucket rate limiter, allowing for 60 requests a minute (single/burst)
-
-Upon reaching the local rate limit, `ErrLocalRatelimit` error will be returned
-
-If remote rate limit is exceeded, `ErrRemoteRatelimit` error will be returned and `RetryAfter` in client fields will be updated with the retry time
-
-### Webhook
-
-```go
-package main
-
-import (
-	"errors"
-	"log"
-	"net/http"
-
-	"github.com/top-gg/go-dbl"
-)
-
-const listenerPort = ":9090"
-
-func main() {
-	listener := dbl.NewListener("token", handleVote)
-
-	// Serve is a blocking call
-	err := listener.Serve(listenerPort)
-	if !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("HTTP server error: %s", err)
-	}
-}
-
-func handleVote(payload *dbl.WebhookPayload) {
-	// perform on payload
-}
-```
-
-### More details
-
-For more details, Godoc and tests are available.
