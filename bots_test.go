@@ -1,6 +1,7 @@
 package dbl
 
 import (
+	"log"
 	"os"
 	"testing"
 
@@ -13,13 +14,17 @@ const (
 )
 
 func TestBots(t *testing.T) {
-	client, err := NewClient(os.Getenv("apikey"))
+	client, err := NewClient(os.Getenv("TOPGG_TOKEN"))
 
 	assert.Nil(t, err, "Client should be created w/o error")
 
 	bots, err := client.GetBots(&GetBotsPayload{
 		Limit: fetchLimit,
 	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	assert.Nil(t, err, "Request should be successful (API depended)")
 
@@ -29,7 +34,7 @@ func TestBots(t *testing.T) {
 }
 
 func TestBot(t *testing.T) {
-	client, err := NewClient(os.Getenv("apikey"))
+	client, err := NewClient(os.Getenv("TOPGG_TOKEN"))
 
 	assert.Nil(t, err, "Client should be created w/o error")
 

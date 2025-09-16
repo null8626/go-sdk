@@ -1,13 +1,14 @@
 package dbl
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestWeekend(t *testing.T) {
-	client, err := NewClient("Unauthenticated request")
+	client, err := NewClient(os.Getenv("TOPGG_TOKEN"))
 
 	assert.Nil(t, err, "Client should be created w/o error")
 

@@ -3,29 +3,32 @@ package dbl
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 )
 
+type BotReviews struct {
+	// The bot's average review score out of 5
+	Score float64 `json:"averageScore"`
+
+	// The bot's review count
+	Count int `json:"count"`
+}
+
 type Bot struct {
-	// The id of the bot
+	// The Top.gg id of the bot
 	ID string `json:"id"`
+
+	// The Discord id of the bot
+	ClientID string `json:"clientid"`
 
 	// The username of the bot
 	Username string `json:"username"`
 
-	// The discriminator of the bot
-	Discriminator string `json:"discriminator"`
-
-	// The avatar hash of the bot's avatar (may be empty)
+	// The bot's avatar url
 	Avatar string `json:"avatar"`
-
-	// The cdn hash of the bot's avatar if the bot has none
-	DefAvatar string `json:"defAvatar"`
-
-	// The library of the bot
-	Library string `json:"lib"`
 
 	// The prefix of the bot
 	Prefix string `json:"prefix"`
@@ -54,32 +57,23 @@ type Bot struct {
 	// The custom bot invite url of the bot (may be empty)
 	Invite string `json:"invite"`
 
-	// The date when the bot was approved
+	// The date when the bot was submitted
 	Date time.Time `json:"date"`
 
-	// The certified status of the bot
-	CertifiedBot bool `json:"certifiedBot"`
-
-	// The vanity url of the bot (deprecated) (may be empty)
+	// The vanity url of the bot (may be empty)
 	Vanity string `json:"vanity"`
 
-	// The monthly amount of upvotes the bot has (undocumented)
+	// The monthly amount of votes the bot has
 	MonthlyPoints int `json:"monthlyPoints"`
 
-	// The amount of upvotes the bot has
+	// The amount of votes the bot has
 	Points int `json:"points"`
 
-	// The GuildID for the donate bot (undocumented) (may be empty)
-	DonateBotGuildID string `json:"donatebotguildid"`
-
-	// The amount of servers the bot is in (undocumented)
+	// The amount of servers the bot is in
 	ServerCount int `json:"server_count"`
 
-	// Server affiliation ("Servers this bot is in" field) (undocumented)
-	GuildAffiliation []string `json:"guilds"`
-
-	// The amount of servers the bot is in per shard. Always present but can be empty (undocumented)
-	Shards []int `json:"shards"`
+	// The bot's reviews
+	Review *BotReviews `json:"reviews"`
 }
 
 type GetBotsPayload struct {
@@ -91,10 +85,7 @@ type GetBotsPayload struct {
 	// Default 0
 	Offset int
 
-	// Field search filter
-	Search map[string]string
-
-	// The field to sort by. Prefix with "-" to reverse the order
+	// The field to sort by descending, valid field names are "id", "date", and "monthlyPoints".
 	Sort string
 
 	// A list of fields to show
@@ -122,27 +113,10 @@ type GetBotsResult struct {
 type BotStats struct {
 	// The amount of servers the bot is in (may be empty)
 	ServerCount int `json:"server_count"`
-
-	// The amount of servers the bot is in per shard. Always present but can be empty
-	Shards []int `json:"shards"`
-
-	// The amount of shards a bot has (may be empty)
-	ShardCount int `json:"shard_count"`
 }
 
 type checkResponse struct {
 	Voted int `json:"voted"`
-}
-
-type BotStatsPayload struct {
-	// The amount of servers the bot is in per shard.
-	Shards []int `json:"shards"`
-
-	// The zero-indexed id of the shard posting. Makes server_count set the shard specific server count (optional)
-	ShardID int `json:"shard_id"`
-
-	// The amount of shards the bot has (optional)
-	ShardCount int `json:"shard_count"`
 }
 
 // Information about different bots with an optional filter parameter
@@ -159,29 +133,28 @@ func (c *Client) GetBots(filter *GetBotsPayload) (*GetBotsResult, error) {
 
 	req, err := c.createRequest("GET", "bots", nil)
 
-	if filter != nil {
+	if err != nil {
+		return nil, err
+	} else if filter != nil {
 		q := req.URL.Query()
 
-		if filter.Limit != 0 {
-			q.Add("limit", strconv.Itoa(filter.Limit))
+		if filter.Limit > 0 {
+			q.Add("limit", strconv.Itoa(min(filter.Limit, 500)))
+		} else {
+			q.Add("limit", "50")
 		}
 
-		if filter.Offset != 0 {
+		if filter.Offset >= 0 {
 			q.Add("offset", strconv.Itoa(filter.Offset))
 		}
 
-		if len(filter.Search) != 0 {
-			tStack := make([]string, 0)
-
-			for f, v := range filter.Search {
-				tStack = append(tStack, f+": "+v)
-			}
-
-			q.Add("search", strings.Join(tStack, " "))
-		}
-
 		if filter.Sort != "" {
-			q.Add("sort", filter.Sort)
+			switch filter.Sort {
+			case "id", "date", "monthlyPoints":
+				q.Add("sort", filter.Sort)
+			default:
+				return nil, ErrInvalidRequest
+			}
 		}
 
 		if len(filter.Fields) != 0 {
@@ -253,12 +226,10 @@ func (c *Client) GetBot(botID string) (*Bot, error) {
 	return bot, nil
 }
 
-// Use this endpoint to see who have upvoted your bot
+// Fetches your project's recent 100 unique voters
 //
-// Requires authentication
-//
-// IF YOU HAVE OVER 1000 VOTES PER MONTH YOU HAVE TO USE THE WEBHOOKS AND CAN NOT USE THIS
-func (c *Client) GetVotes(botID string) ([]*User, error) {
+// # Requires authentication
+func (c *Client) GetVoters(page int) ([]*Voter, error) {
 	if c.token == "" {
 		return nil, ErrRequireAuthentication
 	}
@@ -267,11 +238,21 @@ func (c *Client) GetVotes(botID string) ([]*User, error) {
 		return nil, ErrLocalRatelimit
 	}
 
-	req, err := c.createRequest("GET", "bots/"+botID+"/votes", nil)
+	if page <= 0 {
+		return nil, ErrInvalidRequest
+	}
+
+	req, err := c.createRequest("GET", fmt.Sprintf("bots/%s/votes", c.id), nil)
 
 	if err != nil {
 		return nil, err
 	}
+
+	q := req.URL.Query()
+
+	q.Add("page", strconv.Itoa(page))
+
+	req.URL.RawQuery = q.Encode()
 
 	res, err := c.httpClient.Do(req)
 
@@ -285,21 +266,21 @@ func (c *Client) GetVotes(botID string) ([]*User, error) {
 		return nil, err
 	}
 
-	users := make([]*User, 0)
+	voters := make([]*Voter, 0)
 
-	err = json.Unmarshal(body, users)
+	err = json.Unmarshal(body, &voters)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return users, nil
+	return voters, nil
 }
 
-// Use this endpoint to see who have upvoted your bot in the past 24 hours. It is safe to use this even if you have over 1k votes.
+// Use this endpoint to see who have upvoted for your project in the past 12 hours. It is safe to use this even if you have over 1k votes.
 //
 // Requires authentication
-func (c *Client) HasUserVoted(botID, userID string) (bool, error) {
+func (c *Client) HasUserVoted(userID string) (bool, error) {
 	if c.token == "" {
 		return false, ErrRequireAuthentication
 	}
@@ -308,7 +289,7 @@ func (c *Client) HasUserVoted(botID, userID string) (bool, error) {
 		return false, ErrLocalRatelimit
 	}
 
-	req, err := c.createRequest("GET", "bots/"+botID+"/check", nil)
+	req, err := c.createRequest("GET", "bots/check", nil)
 
 	if err != nil {
 		return false, err
@@ -343,51 +324,45 @@ func (c *Client) HasUserVoted(botID, userID string) (bool, error) {
 	return cr.Voted == 1, nil
 }
 
-// Information about a specific bot's stats
-func (c *Client) GetBotStats(botID string) (*BotStats, error) {
+// Information about your bot's server count
+func (c *Client) GetBotServerCount() (int, error) {
 	if c.token == "" {
-		return nil, ErrRequireAuthentication
+		return 0, ErrRequireAuthentication
 	}
 
 	if !c.limiter.Allow() {
-		return nil, ErrLocalRatelimit
+		return 0, ErrLocalRatelimit
 	}
 
-	req, err := c.createRequest("GET", "bots/"+botID+"/stats", nil)
+	req, err := c.createRequest("GET", "bots/stats", nil)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	body, err := c.readBody(res)
 
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
 
 	botStats := &BotStats{}
 
 	err = json.Unmarshal(body, botStats)
 
-	if err != nil {
-		return nil, err
-	}
-
-	return botStats, nil
+	return botStats.ServerCount, err
 }
 
-// Post your bot's stats
+// Post your bot's server count
 //
-// Requires authentication
-//
-// If your bot is unsharded, pass in server count as the only item in the slice
-func (c *Client) PostBotStats(botID string, payload *BotStatsPayload) error {
+// # Requires authentication
+func (c *Client) PostBotServerCount(serverCount int) error {
 	if c.token == "" {
 		return ErrRequireAuthentication
 	}
@@ -396,19 +371,25 @@ func (c *Client) PostBotStats(botID string, payload *BotStatsPayload) error {
 		return ErrLocalRatelimit
 	}
 
-	encoded, err := json.Marshal(payload)
+	if serverCount <= 0 {
+		return ErrInvalidRequest
+	}
+
+	encoded, err := json.Marshal(&BotStats{
+		ServerCount: serverCount,
+	})
 
 	if err != nil {
 		return err
 	}
 
-	req, err := c.createRequest("POST", "bots/"+botID+"/stats", bytes.NewBuffer(encoded))
+	req, err := c.createRequest("POST", "bots/stats", bytes.NewBuffer(encoded))
 
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("Authorization", c.token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)

@@ -2,28 +2,29 @@ package dbl
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 )
 
-type ListenerFunc func(*WebhookPayload)
+type WebhookListenerFunc func([]byte)
 
 type WebhookListener struct {
 	token   string
-	handler ListenerFunc
+	path    string
+	handler WebhookListenerFunc
 	mux     *http.ServeMux
 }
 
-type WebhookPayload struct {
-	// ID of the bot that received a vote
-	Bot string
+type WebhookVotePayload struct {
+	// ID of the project that received a vote
+	ReceiverId string
 
 	// ID of the user who voted
-	User string
+	VoterId string
 
-	// The type of the vote (should always be "upvote" except when using the test button it's "test")
-	Type string
+	// Whether this vote is just a test done from the page settings
+	IsTest bool
 
 	// Whether the weekend multiplier is in effect, meaning users votes count as two
 	IsWeekend bool
@@ -32,28 +33,55 @@ type WebhookPayload struct {
 	Query url.Values
 }
 
-type wPayload struct {
-	// ID of the bot that received a vote
-	Bot string `json:"bot"`
+type wVotePayload struct {
+	Bot       *string `json:"bot"`
+	Server    *string `json:"guild"`
+	User      string  `json:"user"`
+	Type      string  `json:"type"`
+	IsWeekend *bool   `json:"isWeekend"`
+	Query     string  `json:"query"`
+}
 
-	// ID of the user who voted
-	User string `json:"user"`
+func NewWebhookVotePayload(data []byte) (*WebhookVotePayload, error) {
+	p := &wVotePayload{}
 
-	// The type of the vote (should always be "upvote" except when using the test button it's "test")
-	Type string `json:"type"`
+	if err := json.Unmarshal(data, p); err != nil {
+		return nil, err
+	}
 
-	// Whether the weekend multiplier is in effect, meaning users votes count as two
-	IsWeekend bool `json:"isWeekend"`
+	m, err := url.ParseQuery(p.Query)
 
-	// Query string params found on the /bot/:ID/vote page. Example: ?a=1&b=2
-	Query string `json:"query"`
+	if err != nil {
+		return nil, err
+	}
+
+	receiverId := p.Bot
+
+	if receiverId == nil {
+		receiverId = p.Server
+	}
+
+	isWeekend := false
+
+	if p.IsWeekend != nil {
+		isWeekend = *p.IsWeekend
+	}
+
+	return &WebhookVotePayload{
+		ReceiverId: *receiverId,
+		VoterId:    p.User,
+		IsTest:     p.Type == "test",
+		IsWeekend:  isWeekend,
+		Query:      m,
+	}, nil
 }
 
 // Create a new webhook listener
-func NewListener(token string, handler func(*WebhookPayload)) *WebhookListener {
+func NewWebhookListener(token string, path string, handler func([]byte)) *WebhookListener {
 	return &WebhookListener{
 		token:   token,
-		handler: ListenerFunc(handler),
+		path:    path,
+		handler: WebhookListenerFunc(handler),
 	}
 }
 
@@ -62,12 +90,12 @@ func NewListener(token string, handler func(*WebhookPayload)) *WebhookListener {
 func (wl *WebhookListener) Serve(addr string) error {
 	wl.mux = http.NewServeMux()
 
-	wl.mux.HandleFunc("/", wl.handlePayload)
+	wl.mux.HandleFunc(wl.path, wl.handleRequest)
 
 	return http.ListenAndServe(addr, wl.mux)
 }
 
-func (wl *WebhookListener) handlePayload(w http.ResponseWriter, r *http.Request) {
+func (wl *WebhookListener) handleRequest(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 
@@ -80,19 +108,7 @@ func (wl *WebhookListener) handlePayload(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-
-	if err != nil {
-		return
-	}
-
-	p := &wPayload{}
-
-	if err = json.Unmarshal(body, p); err != nil {
-		return
-	}
-
-	m, err := url.ParseQuery(p.Query)
+	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
 		return
@@ -100,11 +116,5 @@ func (wl *WebhookListener) handlePayload(w http.ResponseWriter, r *http.Request)
 
 	w.WriteHeader(http.StatusNoContent)
 
-	wl.handler(&WebhookPayload{
-		Bot:       p.Bot,
-		User:      p.User,
-		Type:      p.Type,
-		IsWeekend: p.IsWeekend,
-		Query:     m,
-	})
+	wl.handler(body)
 }
