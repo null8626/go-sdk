@@ -234,11 +234,9 @@ func (c *Client) GetBot(botID string) (*Bot, error) {
 	return bot, nil
 }
 
-// Fetches your bot's recent 100 unique voters
+// Fetches your project's recent 100 unique voters
 //
 // # Requires authentication
-//
-// IF YOU HAVE OVER 1000 VOTES PER MONTH YOU HAVE TO USE THE WEBHOOKS AND CAN NOT USE THIS
 func (c *Client) GetVoters(page int) ([]*Voter, error) {
 	if c.token == "" {
 		return nil, ErrRequireAuthentication
@@ -287,7 +285,7 @@ func (c *Client) GetVoters(page int) ([]*Voter, error) {
 	return voters, nil
 }
 
-// Use this endpoint to see who have upvoted your bot in the past 24 hours. It is safe to use this even if you have over 1k votes.
+// Use this endpoint to see who have upvoted for your project in the past 12 hours. It is safe to use this even if you have over 1k votes.
 //
 // Requires authentication
 func (c *Client) HasUserVoted(userID string) (bool, error) {
@@ -335,7 +333,7 @@ func (c *Client) HasUserVoted(userID string) (bool, error) {
 }
 
 // Information about your bot's server count
-func (c *Client) GetServerCount() (int, error) {
+func (c *Client) getBotServerCount() (int, error) {
 	if c.token == "" {
 		return 0, ErrRequireAuthentication
 	}
@@ -372,7 +370,7 @@ func (c *Client) GetServerCount() (int, error) {
 // Post your bot's server count
 //
 // # Requires authentication
-func (c *Client) PostServerCount(serverCount int) error {
+func (c *Client) postBotServerCount(serverCount int) error {
 	if c.token == "" {
 		return ErrRequireAuthentication
 	}
@@ -399,7 +397,7 @@ func (c *Client) PostServerCount(serverCount int) error {
 		return err
 	}
 
-	req.Header.Set("Authorization", c.token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
@@ -440,7 +438,7 @@ func (c *Client) StartAutoposter(delay int, callback AutoposterCallback) (*Autop
 				close(postedChannel)
 				return
 			case <-ticker.C:
-				postedChannel <- c.PostServerCount(callback())
+				postedChannel <- c.postBotServerCount(callback())
 			}
 		}
 	}()

@@ -53,7 +53,7 @@ func TestWebhookVoteProcessing(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	req := httptest.NewRequest(http.MethodPost, "/votes", bytes.NewBuffer(testPayload))
-	req.Header.Set("Authorization", testToken)
+	req.Header.Set("Authorization", "Bearer "+testToken)
 
 	testListener.handleRequest(rec, req)
 

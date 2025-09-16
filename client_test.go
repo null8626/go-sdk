@@ -25,13 +25,13 @@ func TestNewClient(t *testing.T) {
 		log.Fatalf("Error creating new Top.gg client: %s", err)
 	}
 
-	_, err = client.GetServerCount()
+	_, err = client.getBotServerCount()
 
-	assert.Nil(t, err, "GetServerCount should succeed")
+	assert.Nil(t, err, "getBotServerCount should succeed")
 
-	err = client.PostServerCount(2)
+	err = client.postBotServerCount(2)
 
-	assert.Nil(t, err, "PostServerCount should succeed")
+	assert.Nil(t, err, "postBotServerCount should succeed")
 
 	time.Sleep(1 * time.Second)
 	_, err = client.GetBot("264811613708746752")
@@ -55,7 +55,7 @@ func TestNewClient(t *testing.T) {
 	assert.Nil(t, err, "GetVoters should succeed")
 
 	time.Sleep(1 * time.Second)
-	_, err = client.HasUserVoted("661200758510977084")
+	_, err = client.HasUserVoted("8226924471638491136")
 
 	assert.Nil(t, err, "HasUserVoted should succeed")
 

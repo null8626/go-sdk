@@ -17,7 +17,7 @@ type WebhookListener struct {
 }
 
 type WebhookVotePayload struct {
-	// ID of the bot/server that received a vote
+	// ID of the project that received a vote
 	ReceiverId string
 
 	// ID of the user who voted

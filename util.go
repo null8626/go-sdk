@@ -56,7 +56,7 @@ func (c *Client) createRequest(method, endpoint string, body io.Reader) (*http.R
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", c.token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 
 	return req, nil
 }
