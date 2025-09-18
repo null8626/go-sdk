@@ -50,6 +50,14 @@ func (c *Client) readBody(res *http.Response) ([]byte, error) {
 }
 
 func (c *Client) createRequest(method, endpoint string, body io.Reader) (*http.Request, error) {
+	if c.token == "" {
+		return nil, ErrRequireAuthentication
+	}
+
+	if !c.limiter.Allow() {
+		return nil, ErrLocalRatelimit
+	}
+
 	req, err := http.NewRequest(method, BaseURL+endpoint, body)
 
 	if err != nil {
@@ -57,6 +65,7 @@ func (c *Client) createRequest(method, endpoint string, body io.Reader) (*http.R
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Content-Type", "application/json")
 
 	return req, nil
 }

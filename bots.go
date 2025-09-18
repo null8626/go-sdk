@@ -85,6 +85,9 @@ type GetBotsPayload struct {
 	// Default 0
 	Offset int
 
+	// [Deprecated since API v0] Field search filter
+	Search map[string]string
+
 	// The field to sort by descending, valid field names are "id", "date", and "monthlyPoints".
 	Sort string
 
@@ -113,24 +116,36 @@ type GetBotsResult struct {
 type BotStats struct {
 	// The amount of servers the bot is in (may be empty)
 	ServerCount int `json:"server_count"`
+
+	// [Deprecated since API v0] The amount of servers the bot is in per shard. Always present but can be empty
+	Shards []int `json:"shards"`
+
+	// [Deprecated since API v0] The amount of shards a bot has (may be empty)
+	ShardCount int `json:"shard_count"`
 }
 
 type checkResponse struct {
 	Voted int `json:"voted"`
 }
 
+type BotStatsPayload struct {
+	// The amount of servers the bot is in, must not be zero.
+	ServerCount int `json:"server_count"`
+
+	// [Deprecated since API v0] The amount of servers the bot is in per shard.
+	Shards []int `json:"shards"`
+
+	// [Deprecated since API v0] The zero-indexed id of the shard posting. Makes server_count set the shard specific server count (optional)
+	ShardID int `json:"shard_id"`
+
+	// [Deprecated since API v0] The amount of shards the bot has (optional)
+	ShardCount int `json:"shard_count"`
+}
+
 // Information about different bots with an optional filter parameter
 //
 // Use nil if no option is passed
 func (c *Client) GetBots(filter *GetBotsPayload) (*GetBotsResult, error) {
-	if c.token == "" {
-		return nil, ErrRequireAuthentication
-	}
-
-	if !c.limiter.Allow() {
-		return nil, ErrLocalRatelimit
-	}
-
 	req, err := c.createRequest("GET", "bots", nil)
 
 	if err != nil {
@@ -193,14 +208,6 @@ func (c *Client) GetBots(filter *GetBotsPayload) (*GetBotsResult, error) {
 
 // Information about a specific bot
 func (c *Client) GetBot(botID string) (*Bot, error) {
-	if c.token == "" {
-		return nil, ErrRequireAuthentication
-	}
-
-	if !c.limiter.Allow() {
-		return nil, ErrLocalRatelimit
-	}
-
 	req, err := c.createRequest("GET", "bots/"+botID, nil)
 
 	if err != nil {
@@ -233,15 +240,7 @@ func (c *Client) GetBot(botID string) (*Bot, error) {
 // Fetches your project's recent 100 unique voters
 //
 // # Requires authentication
-func (c *Client) GetVoters(page int) ([]*Voter, error) {
-	if c.token == "" {
-		return nil, ErrRequireAuthentication
-	}
-
-	if !c.limiter.Allow() {
-		return nil, ErrLocalRatelimit
-	}
-
+func (c *Client) GetVotes(page int) ([]*User, error) {
 	if page <= 0 {
 		return nil, ErrInvalidRequest
 	}
@@ -270,29 +269,23 @@ func (c *Client) GetVoters(page int) ([]*Voter, error) {
 		return nil, err
 	}
 
-	voters := make([]*Voter, 0)
+	users := make([]*User, 0)
 
-	err = json.Unmarshal(body, &voters)
+	err = json.Unmarshal(body, &users)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return voters, nil
+	return users, nil
 }
 
 // Use this endpoint to see who have upvoted for your project in the past 12 hours. It is safe to use this even if you have over 1k votes.
 //
-// Requires authentication
-func (c *Client) HasUserVoted(userID string) (bool, error) {
-	if c.token == "" {
-		return false, ErrRequireAuthentication
-	}
-
-	if !c.limiter.Allow() {
-		return false, ErrLocalRatelimit
-	}
-
+// # Requires authentication
+//
+// [Deprecated since API v0]: The _botID argument is no longer used.
+func (c *Client) HasUserVoted(_botID, userID string) (bool, error) {
 	req, err := c.createRequest("GET", "bots/check", nil)
 
 	if err != nil {
@@ -328,59 +321,52 @@ func (c *Client) HasUserVoted(userID string) (bool, error) {
 	return cr.Voted == 1, nil
 }
 
-// Information about your bot's server count
-func (c *Client) GetBotServerCount() (int, error) {
-	if c.token == "" {
-		return 0, ErrRequireAuthentication
-	}
-
-	if !c.limiter.Allow() {
-		return 0, ErrLocalRatelimit
-	}
-
+// Information about a specific bot's stats
+//
+// [Deprecated since API v0]: The _botID argument is no longer used.
+func (c *Client) GetBotStats(_botID string) (*BotStats, error) {
 	req, err := c.createRequest("GET", "bots/stats", nil)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	res, err := c.httpClient.Do(req)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	body, err := c.readBody(res)
 
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	botStats := &BotStats{}
 
 	err = json.Unmarshal(body, botStats)
 
-	return botStats.ServerCount, err
+	if err != nil {
+		return nil, err
+	}
+
+	return botStats, nil
 }
 
 // Post your bot's server count
 //
 // # Requires authentication
-func (c *Client) PostBotServerCount(serverCount int) error {
-	if c.token == "" {
-		return ErrRequireAuthentication
-	}
-
-	if !c.limiter.Allow() {
-		return ErrLocalRatelimit
-	}
-
-	if serverCount <= 0 {
+//
+// [Deprecated since API v0]: The _botID argument is no longer used.
+func (c *Client) PostBotStats(_botID string, payload *BotStatsPayload) error {
+	if payload.ServerCount <= 0 {
 		return ErrInvalidRequest
 	}
 
 	encoded, err := json.Marshal(&BotStats{
-		ServerCount: serverCount,
+		ServerCount: payload.ServerCount,
+		Shards:      []int{},
 	})
 
 	if err != nil {
@@ -392,9 +378,6 @@ func (c *Client) PostBotServerCount(serverCount int) error {
 	if err != nil {
 		return err
 	}
-
-	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.Header.Set("Content-Type", "application/json")
 
 	res, err := c.httpClient.Do(req)
 
