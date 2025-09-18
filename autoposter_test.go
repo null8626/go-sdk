@@ -7,21 +7,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBotAutoposter(t *testing.T) {
+func TestAutoposter(t *testing.T) {
 	client, err := NewClient(os.Getenv("TOPGG_TOKEN"))
 
 	assert.Nil(t, err, "Client should be created w/o error")
 
-	botAutoposter, err := client.StartBotAutoposter(3000, func() int {
-		return 2
+	autoposter, err := client.StartAutoposter(3000, func() *BotStatsPayload {
+		return &BotStatsPayload{
+			ServerCount: 2,
+		}
 	})
 
-	assert.Nil(t, err, "BotAutoposter should be created w/o error")
+	assert.Nil(t, err, "Autoposter should be created w/o error")
 
 	for i := 0; i < 3; i++ {
-		err := <-botAutoposter.Posted
+		err := <-autoposter.Posted
 		assert.Nil(t, err, "Posting should not error")
 	}
 
-	botAutoposter.Stop()
+	autoposter.Stop()
 }

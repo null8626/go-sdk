@@ -5,18 +5,18 @@ import (
 	"time"
 )
 
-type BotAutoposter struct {
+type Autoposter struct {
 	stopChannel chan bool
 	// The channel on which errors are delivered after every attempted post API request.
 	Posted chan error
 }
 
-type BotAutoposterCallback func() int
+type AutoposterCallback func() *BotStatsPayload
 
 // Automates your bot's server count posting
 //
 // # Requires authentication
-func (c *Client) StartBotAutoposter(delay int, callback BotAutoposterCallback) (*BotAutoposter, error) {
+func (c *Client) StartAutoposter(delay int, callback AutoposterCallback) (*Autoposter, error) {
 	if c.token == "" {
 		return nil, ErrRequireAuthentication
 	}
@@ -38,18 +38,18 @@ func (c *Client) StartBotAutoposter(delay int, callback BotAutoposterCallback) (
 				close(postedChannel)
 				return
 			case <-ticker.C:
-				postedChannel <- c.PostBotServerCount(callback())
+				postedChannel <- c.PostBotStats("", callback())
 			}
 		}
 	}()
 
-	return &BotAutoposter{
+	return &Autoposter{
 		stopChannel: stopChannel,
 		Posted:      postedChannel,
 	}, nil
 }
 
-// Stops the bot autoposter
-func (a *BotAutoposter) Stop() {
+// Stops the autoposter
+func (a *Autoposter) Stop() {
 	a.stopChannel <- true
 }
