@@ -9,11 +9,11 @@ import (
 	"time"
 )
 
-type BotReviews struct {
-	// The bot's average review score out of 5
+type Reviews struct {
+	// The project's average review score out of 5
 	Score float64 `json:"averageScore"`
 
-	// The bot's review count
+	// The project's review count
 	Count int `json:"count"`
 }
 
@@ -73,7 +73,7 @@ type Bot struct {
 	ServerCount int `json:"server_count"`
 
 	// The bot's reviews
-	Review *BotReviews `json:"reviews"`
+	Review *Reviews `json:"reviews"`
 }
 
 type GetBotsPayload struct {
