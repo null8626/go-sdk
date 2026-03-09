@@ -6,8 +6,8 @@ import "time"
 type UserSource string
 
 const (
-	DiscordUser UserSource = "discord"
-	TopggUser   UserSource = "topgg"
+	UserDiscord UserSource = "discord"
+	UserTopgg   UserSource = "topgg"
 )
 
 // A Top.gg user.
