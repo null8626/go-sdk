@@ -3,9 +3,9 @@ package dbl
 import "errors"
 
 var (
-	ErrRequestFailed         = errors.New("Remote request failed with non 200 status code")
-	ErrLocalRatelimit        = errors.New("Exceeded local rate limit")
-	ErrRemoteRatelimit       = errors.New("Exceeded remote rate limit")
-	ErrUnauthorizedRequest   = errors.New("Unauthorized request")
-	ErrRequireAuthentication = errors.New("Endpoint requires valid token")
+	ErrServerSide     = errors.New("Unable to make request due to Top.gg's end.")
+	ErrNotFound       = errors.New("Such query does not exist.")
+	ErrInvalidRequest = errors.New("Attempted to send an invalid request to the API.")
+	ErrLocalRatelimit = errors.New("Temporarily prevented from sending requests by local ratelimiter.")
+	ErrInvalidToken   = errors.New("Invalid API token.")
 )
