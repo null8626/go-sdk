@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -25,8 +24,6 @@ type OptionFunc func(*Client) error
 
 // Interact with API v1's endpoints.
 type Client struct {
-	sync.Mutex
-	RetryAfter float64       // How long the client should wait (in seconds) until it can make a request to the API again.
 	limiter    *rate.Limiter // The client's ratelimiter.
 	httpClient HTTPClient    // The client's HTTP client.
 	token      string        // The client's API token.
@@ -93,10 +90,6 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		client.Lock()
-		client.RetryAfter = retryAfter
-		client.Unlock()
 
 		return nil, fmt.Errorf("The client is blocked by the API. Please try again in %f seconds.", retryAfter)
 	case 200:
