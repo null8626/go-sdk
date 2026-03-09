@@ -4,7 +4,7 @@ package dbl
 type Platform string
 
 const (
-	Discord Platform = "discord"
+	PlatformDiscord Platform = "discord"
 )
 
 // A project's type.
