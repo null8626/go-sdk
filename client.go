@@ -100,13 +100,7 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 
 		return nil, fmt.Errorf("The client is blocked by the API. Please try again in %f seconds.", retryAfter)
 	case 200:
-		body, err := io.ReadAll(res.Body)
-
-		if err != nil {
-			return nil, err
-		}
-
-		return body, nil
+		return io.ReadAll(res.Body)
 	case 204:
 		return []byte{}, nil
 	default:
@@ -156,9 +150,7 @@ func (client *Client) GetSelf() (*Project, error) {
 
 	project := &Project{}
 
-	err = json.Unmarshal(body, project)
-
-	if err != nil {
+	if err = json.Unmarshal(body, project); err != nil {
 		return nil, err
 	}
 
@@ -217,9 +209,7 @@ func (client *Client) GetVote(userSource UserSource, id string) (*PartialVote, e
 
 	vote := &PartialVote{}
 
-	err = json.Unmarshal(body, vote)
-
-	if err != nil {
+	if err = json.Unmarshal(body, vote); err != nil {
 		return nil, err
 	}
 
