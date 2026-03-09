@@ -11,30 +11,24 @@ import (
 
 const defaultTimeout = 3 * time.Second
 
-// HTTPClient is an interface for HTTP client implementations.
+// A HTTP client implementation.
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// OptionFunc is a function that modifies the the *Client provided.
+// A callback modifies the the *Client provided.
 type OptionFunc func(*Client) error
 
-// Client contains fields and methods for interacting with the Discord Bot List
-// API.
+// Interact with API v1's endpoints.
 type Client struct {
 	sync.Mutex
-
-	// bots/* 60/m with 1 hour block if exceeded
-	// Indicates how long the timeout period is/when you will be able to send requests again
-	// Upon exceeding a rate limit, this will be updated with the retry-after value.
-	RetryAfter int
-
-	limiter    *rate.Limiter
-	httpClient HTTPClient
-	token      string
+	RetryAfter int           // How long the client should wait (in seconds) until it can make a request to the API again.
+	limiter    *rate.Limiter // The client's ratelimiter.
+	httpClient HTTPClient    // The client's HTTP client.
+	token      string        // The client's API token.
 }
 
-// NewClient returns a new *Client after applying the options provided.
+// Creates a new client instance.
 func NewClient(token string, options ...OptionFunc) (*Client, error) {
 	client := &Client{
 		limiter:    rate.NewLimiter(1, 60),
@@ -44,18 +38,18 @@ func NewClient(token string, options ...OptionFunc) (*Client, error) {
 
 	for _, optionFunc := range options {
 		if optionFunc == nil {
-			return nil, fmt.Errorf("invalid nil dbl.Client option func")
+			return nil, fmt.Errorf("Specified dbl.Client option func must not be null")
 		}
 
 		if err := optionFunc(client); err != nil {
-			return nil, fmt.Errorf("error running dbl.Client option func: %w", err)
+			return nil, fmt.Errorf("Unable to run dbl.Client option func: %w", err)
 		}
 	}
 
 	return client, nil
 }
 
-// HTTPClientOption allows for customizing the HTTP client used.
+// Creates an option func that customizes the client's HTTP client.
 func HTTPClientOption(httpClient HTTPClient) OptionFunc {
 	return func(client *Client) error {
 		client.httpClient = httpClient
@@ -64,12 +58,13 @@ func HTTPClientOption(httpClient HTTPClient) OptionFunc {
 	}
 }
 
-// TimeoutOption allows for customizing the HTTP client timeout.
+// Creates an option func that customizes the client's HTTP client timeout.
 func TimeoutOption(duration time.Duration) OptionFunc {
 	return func(client *Client) error {
 		httpClient, ok := client.httpClient.(*http.Client)
+
 		if !ok {
-			return fmt.Errorf("unable to type assert Client.httpClient to *http.Client")
+			return fmt.Errorf("Unable to type assert Client.httpClient to *http.Client")
 		}
 
 		httpClient.Timeout = duration

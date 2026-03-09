@@ -14,11 +14,12 @@ func TestNewClient(t *testing.T) {
 
 	_, err := NewClient(
 		"token",
-		HTTPClientOption(httpClient), // Setting a custom HTTP client. Default is *http.Client with default timeout.
-		TimeoutOption(clientTimeout), // Setting timeout option. Default is 3 seconds
+		HTTPClientOption(httpClient), // Sets an custom HTTP client (optional.)
+		TimeoutOption(clientTimeout), // Sets an custom HTTP client timeout (optional.)
 	)
+
 	if err != nil {
-		log.Fatalf("Error creating new Discord Bot List client: %s", err)
+		log.Fatalf("Unable to create new Top.gg client: %s", err)
 	}
 
 	// ...
