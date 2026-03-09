@@ -1,5 +1,6 @@
 package dbl
 
 const (
-	BaseURL = "https://top.gg/api/v1"
+	APIVersion = "v1"
+	BaseURL    = "https://top.gg/api/" + APIVersion
 )
