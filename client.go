@@ -151,7 +151,7 @@ func (client *Client) GetSelf() (*Project, error) {
 }
 
 // Tries to update the application commands list in your Discord bot's Top.gg page.
-func (client *Client) PostCommands(commands interface{}) error {
+func (client *Client) PostCommands(commands any) error {
 	body, err := json.Marshal(commands)
 
 	if err != nil {
