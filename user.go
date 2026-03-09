@@ -20,11 +20,9 @@ type User struct {
 
 // A project's vote information.
 type Vote struct {
-	VoterId    string    `json:"user_id"`     // The voter's ID.
-	PlatformId string    `json:"platform_id"` // The voter's ID on the project's platform.
-	VotedAt    time.Time `json:"created_at"`  // When the vote was cast.
-	ExpiresAt  time.Time `json:"expires_at"`  // When the vote expires and the user is required to vote again.
-	Weight     int       `json:"weight"`      // The number of votes this vote counted for. This is a rounded integer value which determines how many points this individual vote was worth.
+	PartialVote
+	VoterId    string `json:"user_id"`     // The voter's ID.
+	PlatformId string `json:"platform_id"` // The voter's ID on the project's platform.
 }
 
 // A brief information of a project's vote.
