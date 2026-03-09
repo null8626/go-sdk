@@ -19,7 +19,7 @@ type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// A callback modifies the the *Client provided.
+// A callback that modifies the *Client provided.
 type OptionFunc func(*Client) error
 
 // Interact with API v1's endpoints.
