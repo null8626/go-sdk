@@ -80,7 +80,7 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 	case 400:
 		return nil, errors.New("Attempted to send an invalid request to the API.")
 	case 401:
-		return nil, errors.New("Invalid API token.")
+		return nil, errors.New("Invalid Top.gg API token.")
 	case 404:
 		return nil, errors.New("Such query does not exist.")
 	case 429:
