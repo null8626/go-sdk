@@ -88,11 +88,11 @@ func TestClient(t *testing.T) {
 
 	assert.Nil(t, err, "Client.PostCommands() must work.")
 
-	_, err = client.GetVote(UserDiscord, "123456")
+	_, err = client.GetVote(UserDiscord, "661200758510977084")
 
 	assert.Nil(t, err, "Client.GetVote() must work.")
 
-	_, err = client.GetVote(UserTopgg, "123456")
+	_, err = client.GetVote(UserTopgg, "8226924471638491136")
 
 	assert.Nil(t, err, "Client.GetVote() must work.")
 
