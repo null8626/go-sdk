@@ -1,4 +1,4 @@
-module github.com/top-gg/go-dbl
+module github.com/Top-gg-Community/go-sdk
 
 go 1.25.0
 

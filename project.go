@@ -1,4 +1,4 @@
-package dbl
+package topgg
 
 // Platform represents a project's platform.
 type Platform string

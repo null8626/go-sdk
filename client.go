@@ -1,4 +1,4 @@
-package dbl
+package topgg
 
 import (
 	"bytes"
@@ -40,9 +40,9 @@ func NewClient(token string, options ...OptionFunc) (*Client, error) {
 
 	for _, optionFunc := range options {
 		if optionFunc == nil {
-			return nil, errors.New("Specified dbl.Client option func must not be null")
+			return nil, errors.New("Specified topgg.Client option func must not be null")
 		} else if err := optionFunc(client); err != nil {
-			return nil, fmt.Errorf("Unable to run dbl.Client option func: %w", err)
+			return nil, fmt.Errorf("Unable to run topgg.Client option func: %w", err)
 		}
 	}
 

@@ -1,4 +1,4 @@
-package dbl
+package topgg
 
 const (
 	APIVersion = "v1"

@@ -1,6 +1,6 @@
 # Top.gg Go SDK
 
-> For more information, see the documentation here: <https://pkg.go.dev/github.com/top-gg/go-dbl>.
+> For more information, see the documentation here: <https://pkg.go.dev/github.com/Top-gg-Community/go-sdk>.
 
 The community-maintained Go library for Top.gg.
 
@@ -19,15 +19,15 @@ The community-maintained Go library for Top.gg.
 ## Installation
 
 ```sh
-$ go get github.com/top-gg/go-dbl
+$ go get github.com/Top-gg-Community/go-sdk
 ```
 
 ## Setting up
 
 ```go
-import "github.com/top-gg/go-dbl"
+import "github.com/Top-gg-Community/go-sdk"
 
-client, err := dbl.NewClient(os.Getenv("TOPGG_TOKEN"))
+client, err := topgg.NewClient(os.Getenv("TOPGG_TOKEN"))
 ```
 
 ## Usage
@@ -43,13 +43,13 @@ project, err := client.GetSelf()
 #### Discord ID
 
 ```go
-vote, err := client.GetVote(dbl.UserDiscord, "661200758510977084")
+vote, err := client.GetVote(topgg.UserDiscord, "661200758510977084")
 ```
 
 #### Top.gg ID
 
 ```go
-vote, err := client.GetVote(dbl.UserTopgg, "8226924471638491136")
+vote, err := client.GetVote(topgg.UserTopgg, "8226924471638491136")
 ```
 
 ### Getting a cursor-based paginated list of votes for your project
@@ -135,49 +135,49 @@ err := client.PostCommands(`[{
 #### Large
 
 ```go
-widgetUrl := dbl.LargeWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
+widgetUrl := topgg.LargeWidget(topgg.PlatformDiscord, topgg.ProjectBot, "1026525568344264724")
 ```
 
 #### Votes
 
 ```go
-widgetUrl := dbl.VotesWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
+widgetUrl := topgg.VotesWidget(topgg.PlatformDiscord, topgg.ProjectBot, "1026525568344264724")
 ```
 
 #### Owner
 
 ```go
-widgetUrl := dbl.OwnerWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
+widgetUrl := topgg.OwnerWidget(topgg.PlatformDiscord, topgg.ProjectBot, "1026525568344264724")
 ```
 
 #### Social
 
 ```go
-widgetUrl := dbl.SocialWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
+widgetUrl := topgg.SocialWidget(topgg.PlatformDiscord, topgg.ProjectBot, "1026525568344264724")
 ```
 
 ### Webhooks
 
 ```go
-webhooks := dbl.NewWebhooks(os.Getenv("TOPGG_WEBHOOK_SECRET"))
+webhooks := topgg.NewWebhooks(os.Getenv("TOPGG_WEBHOOK_SECRET"))
 
 // Optional
-webhooks.OnIntegrationCreate(func(res http.ResponseWriter, payload *dbl.IntegrationCreatePayload, trace string) {
+webhooks.OnIntegrationCreate(func(res http.ResponseWriter, payload *topgg.IntegrationCreatePayload, trace string) {
 	res.WriteHeader(http.StatusNoContent)
 })
 
 // Optional
-webhooks.OnIntegrationDelete(func(res http.ResponseWriter, payload *dbl.IntegrationDeletePayload, trace string) {
+webhooks.OnIntegrationDelete(func(res http.ResponseWriter, payload *topgg.IntegrationDeletePayload, trace string) {
 	res.WriteHeader(http.StatusNoContent)
 })
 
 // Optional
-webhooks.OnTest(func(res http.ResponseWriter, payload *dbl.TestPayload, trace string) {
+webhooks.OnTest(func(res http.ResponseWriter, payload *topgg.TestPayload, trace string) {
 	res.WriteHeader(http.StatusNoContent)
 })
 
 // Optional
-webhooks.OnVoteCreate(func(res http.ResponseWriter, payload *dbl.VoteCreatePayload, trace string) {
+webhooks.OnVoteCreate(func(res http.ResponseWriter, payload *topgg.VoteCreatePayload, trace string) {
 	res.WriteHeader(http.StatusNoContent)
 })
 ```
