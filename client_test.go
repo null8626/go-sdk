@@ -75,7 +75,7 @@ func (mockHttpClient) Do(req *http.Request) (*http.Response, error) {
 func TestClient(t *testing.T) {
 	client, err := NewClient(
 		"token",
-		HTTPClientOption(&mockHttpClient{}),
+		WithHTTPClient(&mockHttpClient{}),
 	)
 
 	assert.Nil(t, err, "NewClient() must work.")

@@ -52,7 +52,7 @@ func NewClient(token string, options ...OptionFunc) (*Client, error) {
 }
 
 // Creates an option func that customizes the client's HTTP client.
-func HTTPClientOption(httpClient HTTPClient) OptionFunc {
+func WithHTTPClient(httpClient HTTPClient) OptionFunc {
 	return func(client *Client) error {
 		client.httpClient = httpClient
 
@@ -61,7 +61,7 @@ func HTTPClientOption(httpClient HTTPClient) OptionFunc {
 }
 
 // Creates an option func that customizes the client's HTTP client timeout.
-func TimeoutOption(duration time.Duration) OptionFunc {
+func WithTimeout(duration time.Duration) OptionFunc {
 	return func(client *Client) error {
 		httpClient, ok := client.httpClient.(*http.Client)
 
@@ -152,11 +152,22 @@ func (client *Client) GetSelf() (*Project, error) {
 }
 
 // Tries to update the application commands list in your Discord bot's Top.gg page.
-func (client *Client) PostCommands(commands []any) error {
-	body, err := json.Marshal(commands)
+func (client *Client) PostCommands(commands any) error {
+	var body []byte
 
-	if err != nil {
-		return err
+	switch c := commands.(type) {
+	case string:
+		body = []byte(c)
+	case []byte:
+		body = c
+	default:
+		b, err := json.Marshal(commands)
+
+		if err != nil {
+			return err
+		}
+
+		body = b
 	}
 
 	req, err := client.createRequest("POST", "/projects/@me/commands", bytes.NewBuffer(body))
