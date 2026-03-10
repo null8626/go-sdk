@@ -3,6 +3,7 @@ package dbl
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -39,7 +40,7 @@ func NewClient(token string, options ...OptionFunc) (*Client, error) {
 
 	for _, optionFunc := range options {
 		if optionFunc == nil {
-			return nil, fmt.Errorf("Specified dbl.Client option func must not be null")
+			return nil, errors.New("Specified dbl.Client option func must not be null")
 		}
 
 		if err := optionFunc(client); err != nil {
@@ -65,7 +66,7 @@ func TimeoutOption(duration time.Duration) OptionFunc {
 		httpClient, ok := client.httpClient.(*http.Client)
 
 		if !ok {
-			return fmt.Errorf("Unable to type assert Client.httpClient to *http.Client")
+			return errors.New("Unable to type assert Client.httpClient to *http.Client")
 		}
 
 		httpClient.Timeout = duration
