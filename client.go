@@ -41,9 +41,7 @@ func NewClient(token string, options ...OptionFunc) (*Client, error) {
 	for _, optionFunc := range options {
 		if optionFunc == nil {
 			return nil, errors.New("Specified dbl.Client option func must not be null")
-		}
-
-		if err := optionFunc(client); err != nil {
+		} else if err := optionFunc(client); err != nil {
 			return nil, fmt.Errorf("Unable to run dbl.Client option func: %w", err)
 		}
 	}
@@ -174,9 +172,7 @@ func (client *Client) PostCommands(commands any) error {
 
 	if err != nil {
 		return err
-	}
-
-	if _, err = client.httpClient.Do(req); err != nil {
+	} else if _, err = client.httpClient.Do(req); err != nil {
 		return err
 	}
 
@@ -200,9 +196,7 @@ func (client *Client) GetVote(userSource UserSource, id string) (*PartialVote, e
 
 	if err != nil {
 		return nil, err
-	}
-
-	if res.StatusCode == 404 {
+	} else if res.StatusCode == 404 {
 		return nil, nil
 	}
 
