@@ -1,134 +1,190 @@
-## Go DBL
+# Top.gg Go SDK
 
-[![Build Status](https://travis-ci.com/rumblefrog/go-dbl.svg?branch=master)](https://travis-ci.com/rumblefrog/go-dbl)
-[![Go Report Card](https://goreportcard.com/badge/github.com/DiscordBotList/go-dbl)](https://goreportcard.com/report/github.com/DiscordBotList/go-dbl)
-[![GoDoc](https://godoc.org/github.com/DiscordBotList/go-dbl?status.svg)](https://godoc.org/github.com/DiscordBotList/go-dbl)
+> For more information, see the documentation here: https://pkg.go.dev/github.com/top-gg/go-dbl.
 
-An API wrapper for [Discord Bots](https://top.gg/)
+The community-maintained Go library for Top.gg.
 
-Godoc is available here: https://godoc.org/github.com/DiscordBotList/go-dbl
+## Chapters
 
-<!-- START doctoc generated TOC please keep comment here to allow auto update -->
-<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-## Table of Contents
+- [Installation](#installation)
+- [Setting up](#setting-up)
+- [Usage](#usage)
+  - [Getting your project's information](#getting-your-projects-information)
+  - [Getting your project's vote information of a user](#getting-your-projects-vote-information-of-a-user)
+  - [Getting a cursor-based paginated list of votes for your project](#getting-a-cursor-based-paginated-list-of-votes-for-your-project)
+  - [Posting your bot's application commands list](#posting-your-bots-application-commands-list)
+  - [Generating widget URLs](#generating-widget-urls)
+  - [Webhooks](#webhooks)
 
-- [Go DBL](#go-dbl)
-- [Table of Contents](#table-of-contents)
-- [Guides](#guides)
-	- [Installing](#installing)
-	- [Posting Stats](#posting-stats)
-	- [Setting options](#setting-options)
-	- [Ratelimits](#ratelimits)
-	- [Webhook](#webhook)
-	- [More details](#more-details)
+## Installation
 
-<!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
-## Guides
-
-### Installing
-
-```bash
-go get -u github.com/top-gg/go-dbl
+```sh
+$ go get github.com/top-gg/go-dbl
 ```
 
-### Posting Stats
+## Setting up
 
 ```go
-package main
+import "github.com/top-gg/go-dbl"
 
-import (
-	"log"
-
-	"github.com/top-gg/go-dbl"
-)
-
-func main() {
-	dblClient, err := dbl.NewClient("token")
-	if err != nil {
-		log.Fatalf("Error creating new Discord Bot List client: %s", err)
-	}
-
-	err = dblClient.PostBotStats("botID", &dbl.BotStatsPayload{
-		Shards: []int{2500}, // If non-sharded, just pass total server count as the only integer element
-	})
-	if err != nil {
-		log.Printf("Error sending bot stats to Discord Bot List: %s", err)
-	}
-
-	// ...
-}
+client, err := dbl.NewClient(os.Getenv("TOPGG_TOKEN"))
 ```
 
-### Setting options
+## Usage
+
+### Getting your project's information
 
 ```go
-package main
-
-import (
-	"log"
-	"net/http"
-	"time"
-
-	"github.com/top-gg/go-dbl"
-)
-
-const clientTimeout = 5 * time.Second
-
-func main() {
-	httpClient := &http.Client{}
-
-	dblClient, err := dbl.NewClient(
-		"token",
-		dbl.HTTPClientOption(httpClient), // Setting a custom HTTP client. Default is *http.Client with default timeout.
-		dbl.TimeoutOption(clientTimeout), // Setting timeout option. Default is 3 seconds
-	)
-	if err != nil {
-		log.Fatalf("Error creating new Discord Bot List client: %s", err)
-	}
-
-	// ...
-}
+project, err := client.GetSelf()
 ```
 
-### Ratelimits
+### Getting your project's vote information of a user
 
-There's a local token bucket rate limiter, allowing for 60 requests a minute (single/burst)
-
-Upon reaching the local rate limit, `ErrLocalRatelimit` error will be returned
-
-If remote rate limit is exceeded, `ErrRemoteRatelimit` error will be returned and `RetryAfter` in client fields will be updated with the retry time
-
-### Webhook
+#### Discord ID
 
 ```go
-package main
+vote, err := client.GetVote(dbl.UserDiscord, "661200758510977084")
+```
 
-import (
-	"errors"
-	"log"
-	"net/http"
+#### Top.gg ID
 
-	"github.com/top-gg/go-dbl"
-)
+```go
+vote, err := client.GetVote(dbl.UserTopgg, "8226924471638491136")
+```
 
-const listenerPort = ":9090"
+### Getting a cursor-based paginated list of votes for your project
 
-func main() {
-	listener := dbl.NewListener("token", handleVote)
+```go
+since := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	// Serve is a blocking call
-	err := listener.Serve(listenerPort)
-	if !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalf("HTTP server error: %s", err)
-	}
+firstPage, err := client.GetVotes(since)
+
+if err != nil {
+  return err
 }
 
-func handleVote(payload *dbl.WebhookPayload) {
-	// perform on payload
+for _, vote := range firstPage.Votes() {
+  // ...
+}
+
+secondPage, err := firstPage.Next()
+
+if err != nil {
+  return err
+}
+
+for _, vote := range secondPage.Votes() {
+  // ...
 }
 ```
 
-### More details
+### Posting your bot's application commands list
 
-For more details, Godoc and tests are available
+#### Disgo
+
+In your bot's ready event listener:
+
+```go
+bot.WithEventListenerFunc(func(e *events.Ready) {
+	commands, err := e.Client().Rest.GetGlobalCommands(e.Client().ApplicationID, true)
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: Unable to get global commands: %s\n", err.Error())
+
+		return
+	}
+
+	rawCommands := make([]string, len(commands))
+
+	for i, command := range commands {
+		rawCommand, err := command.MarshalJSON()
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "error: Unable to serialize global command #%d: %s\n", i+1, err.Error())
+
+			return
+		}
+
+		rawCommands[i] = string(rawCommand)
+	}
+
+	if err = client.PostCommands("[" + strings.Join(rawCommands, ",") + "]"); err != nil {
+		fmt.Fprintf(os.Stderr, "error: Unable to post commands to Top.gg: %s\n", err.Error())
+	}
+})
+```
+
+#### Raw
+
+```go
+// Array of application commands that
+// can be serialized to Discord API's raw JSON format.
+err := client.PostCommands(`[{
+  "id": "1",
+  "type": 1,
+  "application_id": "1",
+  "name": "test",
+  "description": "command description",
+  "default_member_permissions": "",
+  "version": "1"
+}]`)
+```
+
+### Generating widget URLs
+
+#### Large
+
+```go
+widgetUrl := dbl.LargeWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+```
+
+#### Votes
+
+```go
+widgetUrl := dbl.VotesWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+```
+
+#### Owner
+
+```go
+widgetUrl := dbl.OwnerWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+```
+
+#### Social
+
+```go
+widgetUrl := dbl.SocialWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+```
+
+### Webhooks
+
+```go
+webhooks := dbl.NewWebhooks(os.Getenv("TOPGG_WEBHOOK_SECRET"))
+
+// Optional
+webhooks.OnIntegrationCreate(func(res http.ResponseWriter, payload *dbl.IntegrationCreatePayload, trace string) {
+	res.WriteHeader(http.StatusOK)
+})
+
+// Optional
+webhooks.OnIntegrationDelete(func(res http.ResponseWriter, payload *dbl.IntegrationDeletePayload, trace string) {
+	res.WriteHeader(http.StatusOK)
+})
+
+// Optional
+webhooks.OnTest(func(res http.ResponseWriter, payload *dbl.TestPayload, trace string) {
+	res.WriteHeader(http.StatusOK)
+})
+
+// Optional
+webhooks.OnVoteCreate(func(res http.ResponseWriter, payload *dbl.VoteCreatePayload, trace string) {
+	res.WriteHeader(http.StatusOK)
+})
+```
+
+Later, in your server's setup:
+
+```go
+// POST /webhook
+http.HandleFunc("/webhook", webhooks.Handler)
+```
