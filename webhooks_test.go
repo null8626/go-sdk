@@ -72,9 +72,9 @@ func TestWebhooks(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodPost, "/webhook", io.NopCloser(bytes.NewReader(body)))
 
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("x-topgg-signature", mockSignature(body))
-		req.Header.Add("x-topgg-trace", webhooksTrace)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("x-topgg-signature", mockSignature(body))
+		req.Header.Set("x-topgg-trace", webhooksTrace)
 
 		webhooks.Handler(rec, req)
 
