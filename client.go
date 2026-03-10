@@ -96,7 +96,7 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 	case 204:
 		return []byte{}, nil
 	default:
-		return nil, errors.New("Unable to make request due to Top.gg's end.")
+		return nil, errors.New("Received an unexpected error from Top.gg's end.")
 	}
 }
 
