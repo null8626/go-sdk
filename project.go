@@ -11,8 +11,8 @@ const (
 type ProjectType string
 
 const (
-	ProjectDiscordBot    ProjectType = "bot"
-	ProjectDiscordServer ProjectType = "server"
+	ProjectBot    ProjectType = "bot"
+	ProjectServer ProjectType = "server"
 )
 
 // Project represents a project listed on Top.gg.

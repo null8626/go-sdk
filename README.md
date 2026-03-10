@@ -135,25 +135,25 @@ err := client.PostCommands(`[{
 #### Large
 
 ```go
-widgetUrl := dbl.LargeWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+widgetUrl := dbl.LargeWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
 ```
 
 #### Votes
 
 ```go
-widgetUrl := dbl.VotesWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+widgetUrl := dbl.VotesWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
 ```
 
 #### Owner
 
 ```go
-widgetUrl := dbl.OwnerWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+widgetUrl := dbl.OwnerWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
 ```
 
 #### Social
 
 ```go
-widgetUrl := dbl.SocialWidget(dbl.ProjectDiscordBot, "1026525568344264724")
+widgetUrl := dbl.SocialWidget(dbl.PlatformDiscord, dbl.ProjectBot, "1026525568344264724")
 ```
 
 ### Webhooks
