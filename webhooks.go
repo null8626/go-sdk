@@ -115,7 +115,7 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 
 	defer req.Body.Close()
 
-	body, err := io.ReadAll(io.LimitReader(req.Body, maxBodySize))
+	body, err := io.ReadAll(io.LimitReader(req.Body, 2*1024*1024))
 
 	if err != nil {
 		res.WriteHeader(http.StatusBadRequest)
