@@ -92,7 +92,7 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 
 		return nil, fmt.Errorf("The client is blocked by the API. Please try again in %f seconds.", retryAfter)
 	case 200:
-		return io.ReadAll(res.Body)
+		return io.ReadAll(io.LimitReader(res.Body, maxBodySize))
 	case 204:
 		return []byte{}, nil
 	default:
