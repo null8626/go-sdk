@@ -1,6 +1,6 @@
 # Top.gg Go SDK
 
-> For more information, see the documentation here: https://pkg.go.dev/github.com/top-gg/go-dbl.
+> For more information, see the documentation here: <https://pkg.go.dev/github.com/top-gg/go-dbl>.
 
 The community-maintained Go library for Top.gg.
 
