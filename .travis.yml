@@ -1,16 +1,12 @@
 language: go
-
 go:
-  - 1.15
+  - 1.25
   - tip
-
 os:
   - linux
-
 matrix:
   allow_failures:
     - go: tip
   fast_finish: true
-
 script:
   - go test
