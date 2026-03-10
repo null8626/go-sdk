@@ -80,11 +80,11 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 
 	switch res.StatusCode {
 	case 400:
-		return nil, ErrInvalidRequest
+		return nil, errors.New("Attempted to send an invalid request to the API.")
 	case 401:
-		return nil, ErrInvalidToken
+		return nil, errors.New("Invalid API token.")
 	case 404:
-		return nil, ErrNotFound
+		return nil, errors.New("Such query does not exist.")
 	case 429:
 		retryAfter, err := strconv.ParseFloat(res.Header.Get("Retry-After"), 32)
 
@@ -98,17 +98,17 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 	case 204:
 		return []byte{}, nil
 	default:
-		return nil, ErrServerSide
+		return nil, errors.New("Unable to make request due to Top.gg's end.")
 	}
 }
 
 func (client *Client) createRequest(method, endpoint string, body io.Reader) (*http.Request, error) {
 	if client.token == "" {
-		return nil, ErrInvalidToken
+		return nil, errors.New("Missing API token.")
 	}
 
 	if !client.limiter.Allow() {
-		return nil, ErrLocalRatelimit
+		return nil, errors.New("Temporarily prevented from sending requests by local ratelimiter.")
 	}
 
 	req, err := http.NewRequest(method, BaseURL+endpoint, body)
