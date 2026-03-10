@@ -13,13 +13,13 @@ import (
 
 type rawListener = func(http.ResponseWriter, json.RawMessage, string)
 
-// A Top.gg webhook manager.
+// Webhooks represents a Top.gg webhook manager.
 type Webhooks struct {
 	Secret    string
 	listeners map[string]rawListener
 }
 
-// Creates a new webhook manager instance.
+// NewWebhooks is a function that creates a new webhook manager instance.
 func NewWebhooks(Secret string) *Webhooks {
 	return &Webhooks{
 		Secret:    Secret,
@@ -39,22 +39,22 @@ func newRawListener[P Payload](listener func(http.ResponseWriter, *P, string)) r
 	}
 }
 
-// Registers a listener that fires when a user has connected to your webhook integration.
+// OnIntegrationCreate is a method that registers a listener that fires when a user has connected to your webhook integration.
 func (webhooks *Webhooks) OnIntegrationCreate(listener func(http.ResponseWriter, *IntegrationCreatePayload, string)) {
 	webhooks.listeners["integration.create"] = newRawListener(listener)
 }
 
-// Registers a listener that fires when a user has disconnected from your webhook integration.
+// OnIntegrationDelete is a method that registers a listener that fires when a user has disconnected from your webhook integration.
 func (webhooks *Webhooks) OnIntegrationDelete(listener func(http.ResponseWriter, *IntegrationDeletePayload, string)) {
 	webhooks.listeners["integration.delete"] = newRawListener(listener)
 }
 
-// Registers a listener that fires upon sent test from the project dashboard.
+// OnTest is a method that registers a listener that fires upon sent test from the project dashboard.
 func (webhooks *Webhooks) OnTest(listener func(http.ResponseWriter, *TestPayload, string)) {
 	webhooks.listeners["webhook.test"] = newRawListener(listener)
 }
 
-// Registers a listener that fires when a user votes for your project.
+// OnVoteCreate is a method that registers a listener that fires when a user votes for your project.
 func (webhooks *Webhooks) OnVoteCreate(listener func(http.ResponseWriter, *VoteCreatePayload, string)) {
 	webhooks.listeners["vote.create"] = newRawListener(listener)
 }
@@ -64,7 +64,7 @@ type rawPayload struct {
 	Data json.RawMessage `json:"data"`
 }
 
-// The handler function to be passed to HandleFunc.
+// Handler is the handler function to be passed to http.HandleFunc.
 func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		res.WriteHeader(http.StatusMethodNotAllowed)
