@@ -55,14 +55,14 @@ func (mockHttpClient) Do(req *http.Request) (*http.Response, error) {
 			if route.Name == "" {
 				res.StatusCode = http.StatusNoContent
 			} else {
-				file, err := os.Open(fmt.Sprintf("mocks/%s.json", route.Name))
+				body, err := os.Open(fmt.Sprintf("mocks/%s.json", route.Name))
 
 				if err != nil {
 					return nil, err
 				}
 
 				res.StatusCode = http.StatusOK
-				res.Body = file
+				res.Body = body
 			}
 
 			break
