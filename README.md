@@ -163,22 +163,22 @@ webhooks := dbl.NewWebhooks(os.Getenv("TOPGG_WEBHOOK_SECRET"))
 
 // Optional
 webhooks.OnIntegrationCreate(func(res http.ResponseWriter, payload *dbl.IntegrationCreatePayload, trace string) {
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(http.StatusNoContent)
 })
 
 // Optional
 webhooks.OnIntegrationDelete(func(res http.ResponseWriter, payload *dbl.IntegrationDeletePayload, trace string) {
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(http.StatusNoContent)
 })
 
 // Optional
 webhooks.OnTest(func(res http.ResponseWriter, payload *dbl.TestPayload, trace string) {
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(http.StatusNoContent)
 })
 
 // Optional
 webhooks.OnVoteCreate(func(res http.ResponseWriter, payload *dbl.VoteCreatePayload, trace string) {
-	res.WriteHeader(http.StatusOK)
+	res.WriteHeader(http.StatusNoContent)
 })
 ```
 
