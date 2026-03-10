@@ -18,9 +18,9 @@ type mockRoute struct {
 	Name     string
 }
 
-const basePath string = "/api/" + APIVersion
+const basePath = "/api/" + APIVersion
 
-var mockRoutes []mockRoute = []mockRoute{
+var mockRoutes = []mockRoute{
 	{
 		Method:   http.MethodGet,
 		Endpoint: regexp.MustCompile(fmt.Sprintf(`^%s\/projects\/@me$`, basePath)),
