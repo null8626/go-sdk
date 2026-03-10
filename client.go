@@ -151,7 +151,7 @@ func (client *Client) GetSelf() (*Project, error) {
 }
 
 // Tries to update the application commands list in your Discord bot's Top.gg page.
-func (client *Client) PostCommands(commands any) error {
+func (client *Client) PostCommands(commands []any) error {
 	body, err := json.Marshal(commands)
 
 	if err != nil {
@@ -226,8 +226,8 @@ func (votes *PaginatedVotes) Votes(client *Client) []Vote {
 }
 
 // Tries to advance to the next page.
-func (votes *PaginatedVotes) Next(client *Client) (*PaginatedVotes, error) {
-	req, err := client.createRequest("GET", "/projects/@me/votes", nil)
+func (votes *PaginatedVotes) Next() (*PaginatedVotes, error) {
+	req, err := votes.client.createRequest("GET", "/projects/@me/votes", nil)
 
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func (votes *PaginatedVotes) Next(client *Client) (*PaginatedVotes, error) {
 
 	req.URL.RawQuery = query.Encode()
 
-	return client.getVotes(req)
+	return votes.client.getVotes(req)
 }
 
 func (client *Client) getVotes(req *http.Request) (*PaginatedVotes, error) {
