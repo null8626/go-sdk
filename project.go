@@ -1,13 +1,13 @@
 package dbl
 
-// A project's platform.
+// Platform represents a project's platform.
 type Platform string
 
 const (
 	PlatformDiscord Platform = "discord"
 )
 
-// A project's type.
+// ProjectType represents a project's type.
 type ProjectType string
 
 const (
@@ -15,7 +15,7 @@ const (
 	ProjectDiscordServer ProjectType = "server"
 )
 
-// A project listed on Top.gg.
+// Project represents a project listed on Top.gg.
 type Project struct {
 	Id           string      `json:"id"`           // The project's ID.
 	Name         string      `json:"name"`         // The project's name sourced from the external platform.
@@ -29,7 +29,7 @@ type Project struct {
 	ReviewCount  int         `json:"review_count"` // The project's total review count.
 }
 
-// A brief information on project listed on Top.gg.
+// PartialProject represents a brief information on a project listed on Top.gg.
 type PartialProject struct {
 	Id         string      `json:"id"`          // The project's ID.
 	Type       ProjectType `json:"type"`        // The project's ID.

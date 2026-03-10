@@ -15,22 +15,22 @@ import (
 
 const defaultTimeout = 3 * time.Second
 
-// A HTTP client implementation.
+// HTTPClient is an interface for HTTP client implementations.
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// A callback that modifies the *Client provided.
+// OptionFunc is a callback type that modifies the *Client provided.
 type OptionFunc func(*Client) error
 
-// Interact with API v1's endpoints.
+// Client is a struct that lets you interact with Top.gg API v1's endpoints.
 type Client struct {
 	limiter    *rate.Limiter // The client's ratelimiter.
 	httpClient HTTPClient    // The client's HTTP client.
 	token      string        // The client's API token.
 }
 
-// Creates a new client instance.
+// NewClient is a function that tries to create a new client instance.
 func NewClient(token string, options ...OptionFunc) (*Client, error) {
 	client := &Client{
 		limiter:    rate.NewLimiter(1, 100),
@@ -49,7 +49,7 @@ func NewClient(token string, options ...OptionFunc) (*Client, error) {
 	return client, nil
 }
 
-// Creates an option func that customizes the client's HTTP client.
+// WithHTTPClient is an option func factory that customizes the client's HTTP client.
 func WithHTTPClient(httpClient HTTPClient) OptionFunc {
 	return func(client *Client) error {
 		client.httpClient = httpClient
@@ -58,7 +58,7 @@ func WithHTTPClient(httpClient HTTPClient) OptionFunc {
 	}
 }
 
-// Creates an option func that customizes the client's HTTP client timeout.
+// WithTimeout is an option func factory that customizes the client's HTTP client timeout.
 func WithTimeout(duration time.Duration) OptionFunc {
 	return func(client *Client) error {
 		httpClient, ok := client.httpClient.(*http.Client)
@@ -120,7 +120,7 @@ func (client *Client) createRequest(method, endpoint string, body io.Reader) (*h
 	return req, nil
 }
 
-// Tries to get your project's information.
+// GetSelf is a method that tries to get your project's information.
 func (client *Client) GetSelf() (*Project, error) {
 	req, err := client.createRequest("GET", "/projects/@me", nil)
 
@@ -149,7 +149,7 @@ func (client *Client) GetSelf() (*Project, error) {
 	return project, nil
 }
 
-// Tries to update the application commands list in your Discord bot's Top.gg page.
+// PostCommands is a method that tries to update the application commands list in your Discord bot's Top.gg page.
 func (client *Client) PostCommands(commands any) error {
 	var body []byte
 
@@ -179,7 +179,7 @@ func (client *Client) PostCommands(commands any) error {
 	return nil
 }
 
-// Tries to get the latest vote information of a user on your project. Returns nil if the user has not voted.
+// GetVote is a method that tries to get the latest vote information of a user on your project. Returns nil if the user has not voted.
 func (client *Client) GetVote(userSource UserSource, id string) (*PartialVote, error) {
 	req, err := client.createRequest("GET", "/projects/@me/votes/"+id, nil)
 
@@ -220,18 +220,18 @@ type paginatedVotes struct {
 	Cursor string `json:"cursor"`
 }
 
-// A paginated list of a project's vote information.
+// PaginatedVotes represents a paginated list of a project's vote information.
 type PaginatedVotes struct {
 	client *Client
 	votes  paginatedVotes
 }
 
-// Gets the votes in this page.
+// Votes is a method that gets the votes in this page.
 func (votes *PaginatedVotes) Votes(client *Client) []Vote {
 	return votes.votes.Votes
 }
 
-// Tries to advance to the next page.
+// Next is a method that tries to advance to the next page.
 func (votes *PaginatedVotes) Next() (*PaginatedVotes, error) {
 	req, err := votes.client.createRequest("GET", "/projects/@me/votes", nil)
 
@@ -273,7 +273,7 @@ func (client *Client) getVotes(req *http.Request) (*PaginatedVotes, error) {
 	return votes, nil
 }
 
-// Tries to get a cursor-based paginated list of votes for your project, ordered by creation date.
+// GetVotes is a method that tries to get a cursor-based paginated list of votes for your project, ordered by creation date.
 func (client *Client) GetVotes(since time.Time) (*PaginatedVotes, error) {
 	req, err := client.createRequest("GET", "/projects/@me/votes", nil)
 

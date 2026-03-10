@@ -13,22 +13,22 @@ func asWidgetPath(projectType ProjectType) string {
 	}
 }
 
-// Generates a large widget URL.
+// LargeWidget is a function that generates a large widget URL.
 func LargeWidget(projectType ProjectType, id string) string {
 	return fmt.Sprintf(BaseURL+"/widgets/large/%s/%s", asWidgetPath(projectType), id)
 }
 
-// Generates a small widget URL for displaying votes.
+// VotesWidget is a function that generates a small widget URL for displaying votes.
 func VotesWidget(projectType ProjectType, id string) string {
 	return fmt.Sprintf(BaseURL+"/widgets/small/votes/%s/%s", asWidgetPath(projectType), id)
 }
 
-// Generates a small widget URL for displaying a project's owner.
+// OwnerWidget is a function that generates a small widget URL for displaying a project's owner.
 func OwnerWidget(projectType ProjectType, id string) string {
 	return fmt.Sprintf(BaseURL+"/widgets/small/owner/%s/%s", asWidgetPath(projectType), id)
 }
 
-// Generates a small widget URL for displaying social stats.
+// SocialWidget is a function that generates a small widget URL for displaying social stats.
 func SocialWidget(projectType ProjectType, id string) string {
 	return fmt.Sprintf(BaseURL+"/widgets/small/social/%s/%s", asWidgetPath(projectType), id)
 }
