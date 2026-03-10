@@ -2,7 +2,7 @@
 
 > For more information, see the documentation here: <https://pkg.go.dev/github.com/Top-gg-Community/go-sdk>.
 
-The community-maintained Go library for Top.gg.
+The community-maintained Go SDK for Top.gg.
 
 ## Chapters
 
