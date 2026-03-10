@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 )
@@ -27,12 +28,18 @@ func NewWebhooks(Secret string) *Webhooks {
 	}
 }
 
+func reportPayloadUnmarshalFailure(body []byte, err error) {
+	slog.Warn(fmt.Sprintf("Unable to parse Top.gg webhook payload. Please report this bug to the SDK maintainers.\nCause: %s\n--- BEGIN BODY DUMP ---\n%s\n--- END BODY DUMP ---", err.Error(), body))
+}
+
 func newRawListener[P Payload](listener func(http.ResponseWriter, *P, string)) rawListener {
 	return func(res http.ResponseWriter, rawPayload json.RawMessage, trace string) {
 		var payload P
 
 		if err := json.Unmarshal(rawPayload, &payload); err != nil {
-			res.WriteHeader(http.StatusBadRequest)
+			reportPayloadUnmarshalFailure(rawPayload, err)
+
+			res.WriteHeader(http.StatusNoContent)
 		} else {
 			listener(res, &payload, trace)
 		}
@@ -130,7 +137,9 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 	payload := &rawPayload{}
 
 	if err = json.Unmarshal(body, payload); err != nil {
-		res.WriteHeader(http.StatusBadRequest)
+		reportPayloadUnmarshalFailure(body, err)
+
+		res.WriteHeader(http.StatusNoContent)
 
 		return
 	}
