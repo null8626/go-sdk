@@ -32,7 +32,8 @@ type Project struct {
 // PartialProject represents a brief information on a project listed on Top.gg.
 type PartialProject struct {
 	Id         string      `json:"id"`          // The project's ID.
-	Type       ProjectType `json:"type"`        // The project's ID.
+	Type       ProjectType `json:"type"`        // The project's type.
 	Platform   Platform    `json:"platform"`    // The project's platform.
 	PlatformId string      `json:"platform_id"` // The project's platform ID.
 }
+
