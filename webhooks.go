@@ -56,7 +56,7 @@ func (webhooks *Webhooks) OnIntegrationDelete(listener func(http.ResponseWriter,
 	webhooks.listeners["integration.delete"] = newRawListener(listener)
 }
 
-// OnTest is a method that registers a listener that fires upon sent test from the project dashboard.
+// OnTest is a method that registers a listener that fires when a test webhook was sent from the dashboard.
 func (webhooks *Webhooks) OnTest(listener func(http.ResponseWriter, *TestPayload, string)) {
 	webhooks.listeners["webhook.test"] = newRawListener(listener)
 }
@@ -154,3 +154,4 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusNoContent)
 }
+
