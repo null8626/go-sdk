@@ -10,13 +10,15 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 )
 
 type rawListener = func(http.ResponseWriter, json.RawMessage, string)
 
 // Webhooks represents a Top.gg webhook manager.
 type Webhooks struct {
-	Secret    string
+	Secret    string        // The secret to use to authorize external requests.
+	Timeout   time.Duration // The timeout for reading payloads.
 	listeners map[string]rawListener
 }
 
@@ -24,6 +26,7 @@ type Webhooks struct {
 func NewWebhooks(Secret string) *Webhooks {
 	return &Webhooks{
 		Secret:    Secret,
+		Timeout:   5 * time.Second,
 		listeners: make(map[string]rawListener),
 	}
 }
@@ -114,6 +117,14 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	defer req.Body.Close()
+
+	controller := http.NewResponseController(res)
+
+	if err := controller.SetReadDeadline(time.Now().Add(webhooks.Timeout)); err != nil {
+		res.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
 
 	body, err := io.ReadAll(io.LimitReader(req.Body, 2*1024*1024))
 
