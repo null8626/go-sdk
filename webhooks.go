@@ -18,7 +18,7 @@ type rawListener = func(http.ResponseWriter, json.RawMessage, string)
 // Webhooks represents a Top.gg webhook manager.
 type Webhooks struct {
 	Secret    string        // The secret to use to authorize external requests.
-	Timeout   time.Duration // The timeout for reading payloads.
+	Timeout   time.Duration // The timeout for reading payloads. Defaults to five seconds.
 	listeners map[string]rawListener
 }
 
