@@ -17,8 +17,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const webhooksSecret = "secret"
-const webhooksTrace = "trace"
+const mockWebhookSecret = "testsecret1234"
+const mockWebhookTrace = "trace"
 
 var webhookEvents = []string{"integration.create", "integration.delete", "webhook.test", "vote.create"}
 
@@ -30,7 +30,7 @@ func defaultResponse(res http.ResponseWriter, name, trace string) {
 func mockSignature(body []byte) string {
 	timestamp := time.Now().UTC().Unix()
 
-	mac := hmac.New(sha256.New, []byte(webhooksSecret))
+	mac := hmac.New(sha256.New, []byte(mockWebhookSecret))
 	mac.Write(fmt.Appendf(nil, "%d.%s", timestamp, body))
 
 	digest := hex.EncodeToString(mac.Sum(nil))
@@ -39,7 +39,7 @@ func mockSignature(body []byte) string {
 }
 
 func TestWebhooks(t *testing.T) {
-	webhooks := NewWebhooks(webhooksSecret)
+	webhooks := NewWebhooks(mockWebhookSecret)
 
 	webhooks.OnIntegrationCreate(func(res http.ResponseWriter, payload *IntegrationCreatePayload, trace string) {
 		defaultResponse(res, "integration.create", trace)
@@ -74,11 +74,11 @@ func TestWebhooks(t *testing.T) {
 
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("x-topgg-signature", mockSignature(body))
-		req.Header.Set("x-topgg-trace", webhooksTrace)
+		req.Header.Set("x-topgg-trace", mockWebhookTrace)
 
 		webhooks.Handler(rec, req)
 
 		assert.Equalf(t, http.StatusOK, rec.Code, "Sending a %s payload must be responded with 200.", event)
-		assert.Equalf(t, fmt.Sprintf("%s:%s", event, webhooksTrace), rec.Body.String(), "Sending a %s payload must be responded with the expected response body.", event)
+		assert.Equalf(t, fmt.Sprintf("%s:%s", event, mockWebhookTrace), rec.Body.String(), "Sending a %s payload must be responded with the expected response body.", event)
 	}
 }
