@@ -79,8 +79,10 @@ func (client *Client) readBody(res *http.Response) ([]byte, error) {
 	switch res.StatusCode {
 	case 400:
 		return nil, errors.New("Attempted to send an invalid request to the API.")
-	case 401, 403:
+	case 401:
 		return nil, errors.New("Invalid Top.gg API token.")
+	case 403:
+		return nil, errors.New("You don't have access to this endpoint.")
 	case 404:
 		return nil, errors.New("Such query does not exist.")
 	case 429:
