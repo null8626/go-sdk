@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,17 +19,19 @@ type rawListener = func(http.ResponseWriter, json.RawMessage, string)
 
 // Webhooks represents a Top.gg webhook manager.
 type Webhooks struct {
-	Secret    string        // The secret to use to authorize external requests.
-	Timeout   time.Duration // The timeout for reading payloads. Defaults to five seconds.
-	listeners map[string]rawListener
+	Secret          string        // The secret to use to authorize external requests.
+	Timeout         time.Duration // The timeout for reading payloads. Defaults to five seconds.
+	TimestampWindow time.Duration // The accepted time window for timestamps before they get rejected to help mitigate replay attacks. Defaults to 30 seconds.
+	listeners       map[string]rawListener
 }
 
 // NewWebhooks is a function that creates a new webhook manager instance.
 func NewWebhooks(Secret string) *Webhooks {
 	return &Webhooks{
-		Secret:    Secret,
-		Timeout:   5 * time.Second,
-		listeners: make(map[string]rawListener),
+		Secret:          Secret,
+		Timeout:         5 * time.Second,
+		TimestampWindow: 30 * time.Second,
+		listeners:       make(map[string]rawListener),
 	}
 }
 
@@ -76,6 +80,8 @@ type rawPayload struct {
 
 // Handler is the handler function to be passed to http.HandleFunc.
 func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
+	currentTimestamp := time.Now().UTC().Unix()
+
 	if req.Method != http.MethodPost {
 		res.WriteHeader(http.StatusMethodNotAllowed)
 
@@ -91,7 +97,8 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var timestamp, signature string
+	timestamp := int64(0)
+	var signature string
 
 	for pair := range strings.SplitSeq(signatureHeader, ",") {
 		parts := strings.Split(pair, "=")
@@ -104,14 +111,24 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 
 		switch parts[0] {
 		case "t":
-			timestamp = parts[1]
+			t, err := strconv.Atoi(parts[1])
+
+			if err != nil {
+				break
+			}
+
+			timestamp = int64(t)
 		case APIVersion:
 			signature = parts[1]
 		}
 	}
 
-	if timestamp == "" || signature == "" {
+	if timestamp == 0 || signature == "" {
 		res.WriteHeader(http.StatusUnprocessableEntity)
+
+		return
+	} else if math.Abs(currentTimestamp-timestamp) > int64(webhooks.TimestampWindow.Seconds()) {
+		res.WriteHeader(http.StatusForbidden)
 
 		return
 	}
@@ -135,7 +152,7 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	mac := hmac.New(sha256.New, []byte(webhooks.Secret))
-	mac.Write(fmt.Appendf(nil, "%s.%s", timestamp, body))
+	mac.Write(fmt.Appendf(nil, "%d.%s", timestamp, body))
 
 	digest := hex.EncodeToString(mac.Sum(nil))
 
@@ -165,4 +182,3 @@ func (webhooks *Webhooks) Handler(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusNoContent)
 }
-
